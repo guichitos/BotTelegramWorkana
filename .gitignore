@@ -1,0 +1,40 @@
+# Archivos y carpetas Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.log
+*.sqlite3
+
+# Configuraciones de entorno
+.env
+*.env
+.env.*
+
+# Config local/VPS
+local_o_vps.py
+variables_api_db.py
+verify_bot_token.py
+ultima_ejecucion.log
+
+# Archivos de test y demo
+*_test.py
+ui_demo_bot.py
+inline_only_bot.py
+
+# Archivos sensibles
+send_twilio_message.py
+send_telegram_message.py
+
+# VSCode y entorno local
+.vscode/
+.idea/
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Instaladores
+*.exe
+*.bat
