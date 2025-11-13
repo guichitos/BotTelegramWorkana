@@ -16,8 +16,6 @@ __pycache__/
 
 # === Archivos de configuración local (no subir al VPS) ===
 local_o_vps.py
-variables_api_db.py
-verify_bot_token.py
 ultima_ejecucion.log
 
 # === Archivos de test y demo ===
