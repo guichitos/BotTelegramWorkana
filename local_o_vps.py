@@ -1,1 +1,0 @@
-entorno = "local"  # local o vps
