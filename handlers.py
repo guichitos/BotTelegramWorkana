@@ -234,10 +234,10 @@ async def eliminar(update: Update, context: ContextTypes.DEFAULT_TYPE):
             estado_habilidades = _formatear_estado_habilidades(SkillsManager)
             await update.message.reply_text(estado_habilidades)
         else:
-            teclado = _build_skills_keyboard(habilidades_actuales)
+            comandos = "\n".join(f"/eliminar {s}" for s in habilidades_actuales)
             await update.message.reply_text(
-                "Elegí la habilidad que querés eliminar. Se pedirá confirmación antes de borrar:",
-                reply_markup=teclado,
+                "Elegí qué habilidad querés eliminar enviando uno de estos comandos:\n"
+                f"{comandos}\n\nSe pedirá confirmación antes de borrar."
             )
 
         Database.disconnect()
@@ -248,11 +248,14 @@ async def eliminar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not SkillsManager.HasSkill(skill_slug):
         mensaje = "La habilidad indicada no está registrada."
     else:
-        eliminado = SkillsManager.Remove(skill)
-        if eliminado:
-            mensaje = f"Habilidad eliminada: {skill_slug}."
-        else:
-            mensaje = "No se pudo eliminar la habilidad. Intentá nuevamente más tarde."
+        Database.disconnect()
+        await update.message.reply_text(
+            "Vas a eliminar la habilidad: "
+            f"{skill_slug}.\n"
+            "Confirmá enviando /confirmar_eliminar "
+            f"{skill_slug} o cancelá con /habilidades."
+        )
+        return
 
     estado_habilidades = _formatear_estado_habilidades(SkillsManager)
 
@@ -276,16 +279,13 @@ async def limpiar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not habilidades_actuales:
         mensaje = "No tenés habilidades para limpiar."
     else:
-        teclado = _build_confirm_keyboard(
-            "limpiar_confirm", "limpiar_cancel", "Sí, limpiar", "Cancelar"
-        )
         Database.disconnect()
         await update.message.reply_text(
             (
                 "Vas a eliminar todas tus habilidades. ¿Confirmás?\n"
-                "Esta acción no se puede deshacer."
-            ),
-            reply_markup=teclado,
+                "Esta acción no se puede deshacer.\n\n"
+                "Enviá /confirmar_limpiar para continuar o /habilidades para cancelar."
+            )
         )
         return
 
@@ -293,6 +293,27 @@ async def limpiar(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     Database.disconnect()
     await update.message.reply_text(f"{mensaje}\n\n{estado_habilidades}")
+
+
+async def confirmar_eliminar(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    TelegramUserID = update.effective_user.id
+    skill = " ".join(context.args).strip()
+
+    if not skill:
+        await update.message.reply_text(
+            "Indica la habilidad a eliminar: /confirmar_eliminar <habilidad>.\n"
+            "Para ver tus opciones usá /eliminar."
+        )
+        return
+
+    mensaje = _eliminar_habilidad_confirmada(TelegramUserID, skill)
+    await update.message.reply_text(mensaje)
+
+
+async def confirmar_limpiar(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    TelegramUserID = update.effective_user.id
+    mensaje = _limpiar_habilidades_confirmado(TelegramUserID)
+    await update.message.reply_text(mensaje)
 
 
 def _formatear_estado_habilidades(skills_manager: UserSkills) -> str:
@@ -306,29 +327,6 @@ def _formatear_estado_habilidades(skills_manager: UserSkills) -> str:
 
     mensaje += "\n\nOpciones:\n/agregar\n/eliminar\n/limpiar"
     return mensaje
-
-
-def _build_skills_keyboard(habilidades: list[str]) -> InlineKeyboardMarkup:
-    botones = [
-        InlineKeyboardButton(text=skill, callback_data=f"elim_skill:{skill}")
-        for skill in habilidades
-    ]
-    filas = [botones[i : i + 2] for i in range(0, len(botones), 2)]
-    return InlineKeyboardMarkup(filas)
-
-
-def _build_confirm_keyboard(
-    confirm_data: str,
-    cancel_data: str,
-    confirm_text: str = "Sí",
-    cancel_text: str = "Cancelar",
-) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        [
-            [InlineKeyboardButton(text=confirm_text, callback_data=confirm_data)],
-            [InlineKeyboardButton(text=cancel_text, callback_data=cancel_data)],
-        ]
-    )
 
 
 def _eliminar_habilidad_confirmada(user_id: int, skill_slug: str) -> str:

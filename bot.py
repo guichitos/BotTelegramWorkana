@@ -1,5 +1,5 @@
 # bot.py
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, filters
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
 from handlers import (
     start,
     registrar,
@@ -10,7 +10,8 @@ from handlers import (
     agregar,
     eliminar,
     limpiar,
-    manejar_callback,
+    confirmar_eliminar,
+    confirmar_limpiar,
     comandos_invalidos,
 )
 
@@ -28,7 +29,8 @@ def run_bot():
     app.add_handler(CommandHandler("agregar", agregar))
     app.add_handler(CommandHandler("eliminar", eliminar))
     app.add_handler(CommandHandler("limpiar", limpiar))
-    app.add_handler(CallbackQueryHandler(manejar_callback))
+    app.add_handler(CommandHandler("confirmar_eliminar", confirmar_eliminar))
+    app.add_handler(CommandHandler("confirmar_limpiar", confirmar_limpiar))
     app.add_handler(MessageHandler(filters.COMMAND, comandos_invalidos))
 
     print("Bot iniciado. Esperando comandos...")
