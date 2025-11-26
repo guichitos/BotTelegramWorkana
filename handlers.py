@@ -110,15 +110,7 @@ async def habilidades(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     SkillsManager = UserSkills(TelegramUserID, Database)
-    habilidades_actuales = SkillsManager.GetAll()
-
-    if habilidades_actuales:
-        lista = "\n".join(f"- {s}" for s in habilidades_actuales)
-        mensaje = f"Tus habilidades actuales son:\n{lista}"
-    else:
-        mensaje = "No tienes habilidades registradas."
-
-    mensaje += "\n\nOpciones:\n/agregar\n/eliminar\n/limpiar"
+    mensaje = _formatear_estado_habilidades(SkillsManager)
 
     await update.message.reply_text(mensaje)
     Database.disconnect()
@@ -153,8 +145,10 @@ async def agregar(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             mensaje = "No se pudo agregar la habilidad. Intentá nuevamente más tarde."
 
+    estado_habilidades = _formatear_estado_habilidades(SkillsManager)
+
     Database.disconnect()
-    await update.message.reply_text(mensaje)
+    await update.message.reply_text(f"{mensaje}\n\n{estado_habilidades}")
 
 
 async def eliminar(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -186,8 +180,10 @@ async def eliminar(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             mensaje = "No se pudo eliminar la habilidad. Intentá nuevamente más tarde."
 
+    estado_habilidades = _formatear_estado_habilidades(SkillsManager)
+
     Database.disconnect()
-    await update.message.reply_text(mensaje)
+    await update.message.reply_text(f"{mensaje}\n\n{estado_habilidades}")
 
 
 async def limpiar(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -212,6 +208,21 @@ async def limpiar(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             mensaje = "No se pudieron limpiar las habilidades. Intentá nuevamente más tarde."
 
+    estado_habilidades = _formatear_estado_habilidades(SkillsManager)
+
     Database.disconnect()
-    await update.message.reply_text(mensaje)
+    await update.message.reply_text(f"{mensaje}\n\n{estado_habilidades}")
+
+
+def _formatear_estado_habilidades(skills_manager: UserSkills) -> str:
+    habilidades_actuales = skills_manager.GetAll()
+
+    if habilidades_actuales:
+        lista = "\n".join(f"- {s}" for s in habilidades_actuales)
+        mensaje = f"Tus habilidades actuales son:\n{lista}"
+    else:
+        mensaje = "No tienes habilidades registradas."
+
+    mensaje += "\n\nOpciones:\n/agregar\n/eliminar\n/limpiar"
+    return mensaje
 
