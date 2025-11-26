@@ -1,7 +1,7 @@
 # workana_url.py
 from urllib.parse import urlencode
 from typing import Iterable, Optional, List
-from user_skills import UserSkills  # Usa la clase que ya maneja DB internamente
+from user_skills_model import UserSkills  # Usa la clase que ya maneja DB internamente
 
 # Defaults
 DEFAULT_SKILLS: List[str] = [
