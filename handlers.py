@@ -331,7 +331,7 @@ async def confirmar_limpiar(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def _formatear_comando_enlace(comando: str) -> str:
     comando_visible = html.escape(comando)
     comando_encoded = quote(comando)
-    return f"<a href=\"tg://msg_url?url={comando_encoded}\">{comando_visible}</a>"
+    return f"<a href=\"tg://msg?text={comando_encoded}\">{comando_visible}</a>"
 
 
 def _formatear_estado_habilidades(skills_manager: UserSkills) -> str:
