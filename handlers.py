@@ -1,4 +1,8 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+import html
+from urllib.parse import quote
+
+from telegram import Update
+from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 from workana_flag_manager import (
     activar_script,
@@ -234,10 +238,18 @@ async def eliminar(update: Update, context: ContextTypes.DEFAULT_TYPE):
             estado_habilidades = _formatear_estado_habilidades(SkillsManager)
             await update.message.reply_text(estado_habilidades)
         else:
-            comandos = "\n".join(f"/eliminar {s}" for s in habilidades_actuales)
+            comandos = "\n".join(
+                _formatear_comando_enlace(f"/eliminar {s}") for s in habilidades_actuales
+            )
             await update.message.reply_text(
-                "Elegí qué habilidad querés eliminar enviando uno de estos comandos:\n"
-                f"{comandos}\n\nSe pedirá confirmación antes de borrar."
+                (
+                    "Elegí qué habilidad querés eliminar tocando uno de estos enlaces:\n"
+                    f"{comandos}\n\n"
+                    "Si no se completa automáticamente, copiá y enviá la línea mostrada.\n"
+                    "Se pedirá confirmación antes de borrar."
+                ),
+                parse_mode=ParseMode.HTML,
+                disable_web_page_preview=True,
             )
 
         Database.disconnect()
@@ -314,6 +326,12 @@ async def confirmar_limpiar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     TelegramUserID = update.effective_user.id
     mensaje = _limpiar_habilidades_confirmado(TelegramUserID)
     await update.message.reply_text(mensaje)
+
+
+def _formatear_comando_enlace(comando: str) -> str:
+    comando_visible = html.escape(comando)
+    comando_encoded = quote(comando)
+    return f"<a href=\"tg://msg_url?url={comando_encoded}\">{comando_visible}</a>"
 
 
 def _formatear_estado_habilidades(skills_manager: UserSkills) -> str:
