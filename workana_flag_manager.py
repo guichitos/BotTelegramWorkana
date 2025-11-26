@@ -15,6 +15,12 @@ def activar_script() -> bool:
 def desactivar_script() -> bool:
     return config.StopScraping()
 
+def tiene_conexion_config() -> bool:
+    return config.IsConnected
+
+def obtener_codigo_error_conexion() -> str:
+    return config.ConnectionErrorCode or "VAR-DB-CONN-001"
+
 if __name__ == "__main__":
     estado_actual = debe_ejecutarse()
     print(f"🔍 Estado actual de 'correr_workana_script': {estado_actual}")
