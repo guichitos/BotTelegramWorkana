@@ -11,6 +11,7 @@ class VariablesApiController:
         self._environment = environment
         self._connection = None
         self._connection_error = None
+        self._connection_error_code = None
         self._connect()
 
     def _get_configuration(self) -> dict:
@@ -35,10 +36,12 @@ class VariablesApiController:
         """Intentar conectar con la base de datos evitando romper la ejecución."""
         try:
             self._connection = mariadb.connect(**self._get_configuration())
+            self._connection_error_code = None
             return self._connection
         except mariadb.Error as e:
             self._connection = None
             self._connection_error = e
+            self._connection_error_code = "VAR-DB-CONN-001"
             print(f"⚠️ No se pudo conectar a la base de datos de variables: {e}")
             return None
 
@@ -67,6 +70,10 @@ class VariablesApiController:
             return False
         except mariadb.Error:
             return False
+
+    @property
+    def ConnectionErrorCode(self) -> str | None:
+        return self._connection_error_code
 
     def StartScraping(self) -> bool:
         return self._update_execution_variable("true")

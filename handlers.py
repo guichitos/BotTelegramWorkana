@@ -1,16 +1,36 @@
 from telegram import Update
 from telegram.ext import ContextTypes
-from workana_flag_manager import activar_script, desactivar_script
+from workana_flag_manager import (
+    activar_script,
+    desactivar_script,
+    tiene_conexion_config,
+    obtener_codigo_error_conexion,
+)
 from workana_bot_database_model import WorkanaBotDatabase
 from user_model import User
 from user_skills import UserSkills
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    activar_script()
-    await update.message.reply_text(
-        "Monitoreo iniciado correctamente.\nPuedes usar los comandos disponibles para modificar la configuración."
-    )
+    if not tiene_conexion_config():
+        await update.message.reply_text(
+            "No se pudo conectar a la base de datos de configuración.\n"
+            "Contactá a Servicio Técnico e informá el código de error: "
+            f"{obtener_codigo_error_conexion()}."
+        )
+        return
+
+    if activar_script():
+        await update.message.reply_text(
+            "Monitoreo iniciado correctamente.\n"
+            "Puedes usar los comandos disponibles para modificar la configuración."
+        )
+    else:
+        await update.message.reply_text(
+            "No se pudo iniciar el monitoreo.\n"
+            "Contactá a Servicio Técnico e informá el código de error: "
+            f"{obtener_codigo_error_conexion()}."
+        )
 
 async def registrar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     TelegramUserID = update.effective_user.id
@@ -37,8 +57,22 @@ async def registrar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     Database.disconnect()
 
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    desactivar_script()
-    await update.message.reply_text("Monitoreo detenido.")
+    if not tiene_conexion_config():
+        await update.message.reply_text(
+            "No se pudo conectar a la base de datos de configuración.\n"
+            "Contactá a Servicio Técnico e informá el código de error: "
+            f"{obtener_codigo_error_conexion()}."
+        )
+        return
+
+    if desactivar_script():
+        await update.message.reply_text("Monitoreo detenido.")
+    else:
+        await update.message.reply_text(
+            "No se pudo detener el monitoreo.\n"
+            "Contactá a Servicio Técnico e informá el código de error: "
+            f"{obtener_codigo_error_conexion()}."
+        )
 
 async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
     mensaje = (
