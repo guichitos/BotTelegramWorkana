@@ -262,12 +262,20 @@ async def eliminar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not SkillsManager.HasSkill(skill_slug):
         mensaje = "La habilidad indicada no está registrada."
     else:
+        bot_username = update.get_bot().username or ""
+        comando_confirmacion = _formatear_comando_enlace(
+            f"/confirmar_eliminar {skill_slug}", bot_username
+        )
+
         Database.disconnect()
         await update.message.reply_text(
-            "Vas a eliminar la habilidad: "
-            f"{skill_slug}.\n"
-            "Confirmá enviando /confirmar_eliminar "
-            f"{skill_slug} o cancelá con /habilidades."
+            (
+                f"Vas a eliminar la habilidad: {skill_slug}.\n"
+                f"Confirmá tocando {comando_confirmacion} o cancelá con /habilidades.\n"
+                "Si no se completa automáticamente, copiá y enviá la línea mostrada."
+            ),
+            parse_mode=ParseMode.HTML,
+            disable_web_page_preview=True,
         )
         return
 
