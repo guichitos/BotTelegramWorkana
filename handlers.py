@@ -238,8 +238,10 @@ async def eliminar(update: Update, context: ContextTypes.DEFAULT_TYPE):
             estado_habilidades = _formatear_estado_habilidades(SkillsManager)
             await update.message.reply_text(estado_habilidades)
         else:
+            bot_username = update.get_bot().username or ""
             comandos = "\n".join(
-                _formatear_comando_enlace(f"/eliminar {s}") for s in habilidades_actuales
+                _formatear_comando_enlace(f"/eliminar {s}", bot_username)
+                for s in habilidades_actuales
             )
             await update.message.reply_text(
                 (
@@ -328,10 +330,17 @@ async def confirmar_limpiar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(mensaje)
 
 
-def _formatear_comando_enlace(comando: str) -> str:
+def _formatear_comando_enlace(comando: str, bot_username: str) -> str:
     comando_visible = html.escape(comando)
-    comando_encoded = quote(comando)
-    return f"<a href=\"tg://msg?text={comando_encoded}\">{comando_visible}</a>"
+
+    if bot_username:
+        comando_encoded = quote(comando)
+        return (
+            f"<a href=\"https://t.me/{bot_username}?text={comando_encoded}\">"
+            f"{comando_visible}</a>"
+        )
+
+    return comando_visible
 
 
 def _formatear_estado_habilidades(skills_manager: UserSkills) -> str:
