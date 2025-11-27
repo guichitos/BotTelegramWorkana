@@ -9,7 +9,10 @@ load_dotenv()
 class VariablesApiController:
     def __init__(self, environment: str):
         self._environment = environment
-        self._connection = self._connect()
+        self._connection = None
+        self._connection_error = None
+        self._connection_error_code = None
+        self._connect()
 
     def _get_configuration(self) -> dict:
         if self._environment == "local":
@@ -29,12 +32,24 @@ class VariablesApiController:
                 "password": os.getenv("VPS_DB_PASS", "default-fallback")
             }
 
-    def _connect(self) -> mariadb.Connection:
-        return mariadb.connect(**self._get_configuration())
+    def _connect(self) -> mariadb.Connection | None:
+        """Intentar conectar con la base de datos evitando romper la ejecución."""
+        try:
+            self._connection = mariadb.connect(**self._get_configuration())
+            self._connection_error_code = None
+            return self._connection
+        except mariadb.Error as e:
+            self._connection = None
+            self._connection_error = e
+            self._connection_error_code = "VAR-DB-CONN-001"
+            print(f"⚠️ No se pudo conectar a la base de datos de variables: {e}")
+            return None
 
     @property
     def ScriptMustRun(self) -> bool:
         try:
+            if not self._connection:
+                return False
             cursor = self._connection.cursor()
             cursor.execute("SELECT value FROM variables WHERE name = 'correr_workana_script' LIMIT 1")
             result = cursor.fetchone()
@@ -44,6 +59,7 @@ class VariablesApiController:
         except mariadb.Error as e:
             print(f"❌ Error al consultar la variable de ejecución: {e}")
             return False
+
     @property
     def IsConnected(self) -> bool:
         try:
@@ -55,6 +71,10 @@ class VariablesApiController:
         except mariadb.Error:
             return False
 
+    @property
+    def ConnectionErrorCode(self) -> str | None:
+        return self._connection_error_code
+
     def StartScraping(self) -> bool:
         return self._update_execution_variable("true")
 
@@ -62,11 +82,14 @@ class VariablesApiController:
         return self._update_execution_variable("false")
 
     def _update_execution_variable(self, value: str) -> bool:
+        if not self._connection:
+            print("⚠️ No hay conexión a la base de datos para actualizar la variable.")
+            return False
         try:
             cursor = self._connection.cursor()
             cursor.execute(
                 "UPDATE variables SET value = ? WHERE name = 'correr_workana_script'",
-                (value,)
+                (value,),
             )
             self._connection.commit()
             return True
