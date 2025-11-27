@@ -97,17 +97,6 @@ async def eliminar_cuenta(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("No estás registrado. Usá /registrar para crear tu cuenta.")
         return
 
-    if not usuario.IsActivated:
-        Database.disconnect()
-        reactivar = _formatear_comando_enlace("/registrar", bot_username)
-        await update.message.reply_text(
-            ("Tu cuenta ya está desactivada.\n"
-             f"Si querés reactivarla, enviá {reactivar} y luego /start."),
-            parse_mode=ParseMode.HTML,
-            disable_web_page_preview=True,
-        )
-        return
-
     comando_confirmacion = _formatear_comando_enlace(
         "/confirmar_eliminar_cuenta", bot_username
     )
@@ -410,14 +399,8 @@ def _eliminar_cuenta_confirmada(user_id: int, bot_username: str) -> str:
 
     if not usuario.IsRegistered:
         mensaje = "No estás registrado. Usá /registrar para crear tu cuenta."
-    elif not usuario.IsActivated:
-        reactivar = _formatear_comando_enlace("/registrar", bot_username)
-        mensaje = (
-            "Tu cuenta ya estaba desactivada.\n"
-            f"Si querés reactivarla, enviá {reactivar} y luego /start."
-        )
     else:
-        borrado = usuario.SoftDelete()
+        borrado = usuario.Delete()
         if borrado:
             mensaje = (
                 "Tu cuenta fue eliminada del bot.\n"
