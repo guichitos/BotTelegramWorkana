@@ -289,7 +289,7 @@ async def eliminar(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             bot_username = update.get_bot().username or ""
             comandos = "\n".join(
-                _formatear_comando_enlace(f"/eliminar {s}", bot_username)
+                _formatear_comando_enlace(f"/eliminar_habilidad {s}", bot_username)
                 for s in habilidades_actuales
             )
             await update.message.reply_text(
@@ -313,7 +313,7 @@ async def eliminar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         bot_username = update.get_bot().username or ""
         comando_confirmacion = _formatear_comando_enlace(
-            f"/confirmar_eliminar {skill_slug}", bot_username
+            f"/confirmar_eliminar_habilidad {skill_slug}", bot_username
         )
 
         Database.disconnect()
@@ -372,8 +372,8 @@ async def confirmar_eliminar(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     if not skill:
         await update.message.reply_text(
-            "Indica la habilidad a eliminar: /confirmar_eliminar <habilidad>.\n"
-            "Para ver tus opciones usá /eliminar."
+            "Indica la habilidad a eliminar: /confirmar_eliminar_habilidad <habilidad>.\n"
+            "Para ver tus opciones usá /eliminar_habilidad."
         )
         return
 
@@ -396,11 +396,13 @@ def _eliminar_cuenta_confirmada(user_id: int, bot_username: str) -> str:
         return "No es posible conectarse a la base de datos."
 
     usuario = User(user_id, Database)
+    SkillsManager = UserSkills(user_id, Database)
 
     if not usuario.IsRegistered:
         mensaje = "No estás registrado. Usá /registrar para crear tu cuenta."
     else:
-        borrado = usuario.Delete()
+        habilidades_borradas = SkillsManager.ClearAll()
+        borrado = habilidades_borradas and usuario.Delete()
         if borrado:
             mensaje = (
                 "Tu cuenta fue eliminada del bot.\n"
@@ -435,7 +437,7 @@ def _formatear_estado_habilidades(skills_manager: UserSkills) -> str:
     else:
         mensaje = "No tienes habilidades registradas."
 
-    mensaje += "\n\nOpciones:\n/agregar\n/eliminar\n/limpiar"
+    mensaje += "\n\nOpciones:\n/agregar\n/eliminar_habilidad\n/limpiar"
     return mensaje
 
 

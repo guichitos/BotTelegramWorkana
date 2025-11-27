@@ -30,9 +30,13 @@ def run_bot():
     app.add_handler(CommandHandler(["eliminar_cuenta", "borrar"], eliminar_cuenta))
     app.add_handler(CommandHandler("habilidades", habilidades))
     app.add_handler(CommandHandler("agregar", agregar))
-    app.add_handler(CommandHandler("eliminar", eliminar))
+    app.add_handler(CommandHandler(["eliminar_habilidad", "eliminar"], eliminar))
     app.add_handler(CommandHandler("limpiar", limpiar))
-    app.add_handler(CommandHandler("confirmar_eliminar", confirmar_eliminar))
+    app.add_handler(
+        CommandHandler(
+            ["confirmar_eliminar_habilidad", "confirmar_eliminar"], confirmar_eliminar
+        )
+    )
     app.add_handler(CommandHandler("confirmar_limpiar", confirmar_limpiar))
     app.add_handler(CommandHandler(["confirmar_eliminar_cuenta", "confirmar_borrar"], confirmar_eliminar_cuenta))
     app.add_handler(MessageHandler(filters.COMMAND, comandos_invalidos))
