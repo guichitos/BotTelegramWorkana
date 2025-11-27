@@ -6,14 +6,14 @@ from handlers import (
     stop,
     ayuda,
     menu,
-    borrar,
+    eliminar_cuenta,
     habilidades,
     agregar,
     eliminar,
     limpiar,
     confirmar_eliminar,
     confirmar_limpiar,
-    confirmar_borrar,
+    confirmar_eliminar_cuenta,
     comandos_invalidos,
 )
 
@@ -27,14 +27,14 @@ def run_bot():
     app.add_handler(CommandHandler("registrar", registrar))
     app.add_handler(CommandHandler("stop", stop))
     app.add_handler(CommandHandler("ayuda", ayuda))
-    app.add_handler(CommandHandler("borrar", borrar))
+    app.add_handler(CommandHandler(["eliminar_cuenta", "borrar"], eliminar_cuenta))
     app.add_handler(CommandHandler("habilidades", habilidades))
     app.add_handler(CommandHandler("agregar", agregar))
     app.add_handler(CommandHandler("eliminar", eliminar))
     app.add_handler(CommandHandler("limpiar", limpiar))
     app.add_handler(CommandHandler("confirmar_eliminar", confirmar_eliminar))
     app.add_handler(CommandHandler("confirmar_limpiar", confirmar_limpiar))
-    app.add_handler(CommandHandler("confirmar_borrar", confirmar_borrar))
+    app.add_handler(CommandHandler(["confirmar_eliminar_cuenta", "confirmar_borrar"], confirmar_eliminar_cuenta))
     app.add_handler(MessageHandler(filters.COMMAND, comandos_invalidos))
 
     print("Bot iniciado. Esperando comandos...")

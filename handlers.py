@@ -79,7 +79,7 @@ async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"{obtener_codigo_error_conexion()}."
         )
 
-async def borrar(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def eliminar_cuenta(update: Update, context: ContextTypes.DEFAULT_TYPE):
     TelegramUserID = update.effective_user.id
 
     Database = WorkanaBotDatabase()
@@ -108,13 +108,14 @@ async def borrar(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    comando_confirmacion = _formatear_comando_enlace("/confirmar_borrar", bot_username)
+    comando_confirmacion = _formatear_comando_enlace(
+        "/confirmar_eliminar_cuenta", bot_username
+    )
     Database.disconnect()
 
     await update.message.reply_text(
         (
-            "Vas a borrar tu cuenta del bot.\n"
-            "Esto detendrá el envío de mensajes y conservará tus datos de forma segura.\n"
+            "Vas a eliminar tu cuenta del bot.\n"
             f"Confirmá tocando {comando_confirmacion} o cancelá con /menu.\n"
             "Si no se completa automáticamente, copiá y enviá la línea mostrada."
         ),
@@ -123,11 +124,11 @@ async def borrar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-async def confirmar_borrar(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def confirmar_eliminar_cuenta(update: Update, context: ContextTypes.DEFAULT_TYPE):
     TelegramUserID = update.effective_user.id
     bot_username = update.get_bot().username or ""
 
-    mensaje = _borrar_cuenta_confirmada(TelegramUserID, bot_username)
+    mensaje = _eliminar_cuenta_confirmada(TelegramUserID, bot_username)
     await update.message.reply_text(
         mensaje,
         parse_mode=ParseMode.HTML,
@@ -142,6 +143,7 @@ async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/stop - Detener el monitoreo\n"
         "/borrar - Desactivar tu cuenta de forma segura\n"
         "/habilidades - Ver opciones para administrar tus habilidades\n"
+        "/eliminar_cuenta (eliminar-cuenta) - Eliminar tu cuenta del bot\n"
         "/menu - Mostrar los comandos disponibles en forma de lista"
     )
     await update.message.reply_text(mensaje)
@@ -150,10 +152,10 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     mensaje = (
         "Menú de opciones:\n"
         "/registrar\n"
+        "/habilidades\n"
         "/start\n"
         "/stop\n"
-        "/borrar\n"
-        "/habilidades\n"
+        "/eliminar_cuenta (eliminar-cuenta)\n"
         "/ayuda"
     )
     await update.message.reply_text(mensaje)
@@ -396,7 +398,7 @@ async def confirmar_limpiar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(mensaje)
 
 
-def _borrar_cuenta_confirmada(user_id: int, bot_username: str) -> str:
+def _eliminar_cuenta_confirmada(user_id: int, bot_username: str) -> str:
     Database = WorkanaBotDatabase()
     Database.connect()
 
@@ -418,8 +420,8 @@ def _borrar_cuenta_confirmada(user_id: int, bot_username: str) -> str:
         borrado = usuario.SoftDelete()
         if borrado:
             mensaje = (
-                "Tu cuenta fue desactivada.\n"
-                "Dejarás de recibir notificaciones hasta que la reactivés con /registrar."
+                "Tu cuenta fue eliminada del bot.\n"
+                "Si querés volver a usarlo, tendrás que registrarte nuevamente con /registrar."
             )
         else:
             mensaje = "No se pudo borrar la cuenta. Intentá nuevamente más tarde."
