@@ -1,16 +1,40 @@
+import html
+from urllib.parse import quote
+
 from telegram import Update
+from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
-from workana_flag_manager import activar_script, desactivar_script
+from workana_flag_manager import (
+    activar_script,
+    desactivar_script,
+    tiene_conexion_config,
+    obtener_codigo_error_conexion,
+)
 from workana_bot_database_model import WorkanaBotDatabase
 from user_model import User
-from user_skills import UserSkills
+from user_skills_model import UserSkills
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    activar_script()
-    await update.message.reply_text(
-        "Monitoreo iniciado correctamente.\nPuedes usar los comandos disponibles para modificar la configuración."
-    )
+    if not tiene_conexion_config():
+        await update.message.reply_text(
+            "No se pudo conectar a la base de datos de configuración.\n"
+            "Contactá a Servicio Técnico e informá el código de error: "
+            f"{obtener_codigo_error_conexion()}."
+        )
+        return
+
+    if activar_script():
+        await update.message.reply_text(
+            "Monitoreo iniciado correctamente.\n"
+            "Puedes usar los comandos disponibles para modificar la configuración."
+        )
+    else:
+        await update.message.reply_text(
+            "No se pudo iniciar el monitoreo.\n"
+            "Contactá a Servicio Técnico e informá el código de error: "
+            f"{obtener_codigo_error_conexion()}."
+        )
 
 async def registrar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     TelegramUserID = update.effective_user.id
@@ -30,15 +54,85 @@ async def registrar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         RegistrationSuccess = BotUser.Register(TelegramUsername)
         if RegistrationSuccess:
-            await update.message.reply_text("Usuario registrado correctamente.")
+            estado = "reactivado" if BotUser.IsActivated else "registrado"
+            await update.message.reply_text(f"Usuario {estado} correctamente.")
         else:
             await update.message.reply_text("No fue posible registrar el usuario.")
 
     Database.disconnect()
 
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    desactivar_script()
-    await update.message.reply_text("Monitoreo detenido.")
+    if not tiene_conexion_config():
+        await update.message.reply_text(
+            "No se pudo conectar a la base de datos de configuración.\n"
+            "Contactá a Servicio Técnico e informá el código de error: "
+            f"{obtener_codigo_error_conexion()}."
+        )
+        return
+
+    if desactivar_script():
+        await update.message.reply_text("Monitoreo detenido.")
+    else:
+        await update.message.reply_text(
+            "No se pudo detener el monitoreo.\n"
+            "Contactá a Servicio Técnico e informá el código de error: "
+            f"{obtener_codigo_error_conexion()}."
+        )
+
+async def borrar(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    TelegramUserID = update.effective_user.id
+
+    Database = WorkanaBotDatabase()
+    Database.connect()
+
+    if not Database.IsConnected:
+        await update.message.reply_text("No es posible conectarse a la base de datos.")
+        return
+
+    usuario = User(TelegramUserID, Database)
+    bot_username = update.get_bot().username or ""
+
+    if not usuario.IsRegistered:
+        Database.disconnect()
+        await update.message.reply_text("No estás registrado. Usá /registrar para crear tu cuenta.")
+        return
+
+    if not usuario.IsActivated:
+        Database.disconnect()
+        reactivar = _formatear_comando_enlace("/registrar", bot_username)
+        await update.message.reply_text(
+            ("Tu cuenta ya está desactivada.\n"
+             f"Si querés reactivarla, enviá {reactivar} y luego /start."),
+            parse_mode=ParseMode.HTML,
+            disable_web_page_preview=True,
+        )
+        return
+
+    comando_confirmacion = _formatear_comando_enlace("/confirmar_borrar", bot_username)
+    Database.disconnect()
+
+    await update.message.reply_text(
+        (
+            "Vas a borrar tu cuenta del bot.\n"
+            "Esto detendrá el envío de mensajes y conservará tus datos de forma segura.\n"
+            f"Confirmá tocando {comando_confirmacion} o cancelá con /menu.\n"
+            "Si no se completa automáticamente, copiá y enviá la línea mostrada."
+        ),
+        parse_mode=ParseMode.HTML,
+        disable_web_page_preview=True,
+    )
+
+
+async def confirmar_borrar(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    TelegramUserID = update.effective_user.id
+    bot_username = update.get_bot().username or ""
+
+    mensaje = _borrar_cuenta_confirmada(TelegramUserID, bot_username)
+    await update.message.reply_text(
+        mensaje,
+        parse_mode=ParseMode.HTML,
+        disable_web_page_preview=True,
+    )
 
 async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
     mensaje = (
@@ -46,6 +140,7 @@ async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/registrar - Registrar tu usuario para recibir oportunidades\n"
         "/start - Iniciar el monitoreo de nuevas oportunidades\n"
         "/stop - Detener el monitoreo\n"
+        "/borrar - Desactivar tu cuenta de forma segura\n"
         "/habilidades - Ver opciones para administrar tus habilidades\n"
         "/menu - Mostrar los comandos disponibles en forma de lista"
     )
@@ -57,6 +152,7 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/registrar\n"
         "/start\n"
         "/stop\n"
+        "/borrar\n"
         "/habilidades\n"
         "/ayuda"
     )
@@ -76,7 +172,213 @@ async def habilidades(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     SkillsManager = UserSkills(TelegramUserID, Database)
+    mensaje = _formatear_estado_habilidades(SkillsManager)
+
+    await update.message.reply_text(mensaje)
+    Database.disconnect()
+
+
+async def agregar(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    TelegramUserID = update.effective_user.id
+    skill = " ".join(context.args).strip()
+
+    if not skill:
+        await update.message.reply_text(
+            "Indica la habilidad que querés agregar: /agregar <habilidad>."
+        )
+        return
+
+    Database = WorkanaBotDatabase()
+    Database.connect()
+
+    if not Database.IsConnected:
+        await update.message.reply_text("No es posible conectarse a la base de datos.")
+        return
+
+    SkillsManager = UserSkills(TelegramUserID, Database)
+    skill_slug = SkillsManager.normalize_skill(skill)
+
+    if SkillsManager.HasSkill(skill):
+        mensaje = f"La habilidad ya estaba registrada: {skill_slug}."
+    else:
+        agregado = SkillsManager.Add(skill)
+        if agregado:
+            mensaje = f"Habilidad agregada: {skill_slug}."
+        else:
+            mensaje = "No se pudo agregar la habilidad. Intentá nuevamente más tarde."
+
+    estado_habilidades = _formatear_estado_habilidades(SkillsManager)
+
+    Database.disconnect()
+    await update.message.reply_text(f"{mensaje}\n\n{estado_habilidades}")
+
+
+async def eliminar(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    TelegramUserID = update.effective_user.id
+    skill = " ".join(context.args).strip()
+
+    Database = WorkanaBotDatabase()
+    Database.connect()
+
+    if not Database.IsConnected:
+        await update.message.reply_text("No es posible conectarse a la base de datos.")
+        return
+
+    SkillsManager = UserSkills(TelegramUserID, Database)
     habilidades_actuales = SkillsManager.GetAll()
+
+    if not skill:
+        if not habilidades_actuales:
+            estado_habilidades = _formatear_estado_habilidades(SkillsManager)
+            await update.message.reply_text(estado_habilidades)
+        else:
+            bot_username = update.get_bot().username or ""
+            comandos = "\n".join(
+                _formatear_comando_enlace(f"/eliminar {s}", bot_username)
+                for s in habilidades_actuales
+            )
+            await update.message.reply_text(
+                (
+                    "Elegí qué habilidad querés eliminar tocando uno de estos enlaces:\n"
+                    f"{comandos}\n\n"
+                    "Si no se completa automáticamente, copiá y enviá la línea mostrada.\n"
+                    "Se pedirá confirmación antes de borrar."
+                ),
+                parse_mode=ParseMode.HTML,
+                disable_web_page_preview=True,
+            )
+
+        Database.disconnect()
+        return
+
+    skill_slug = SkillsManager.normalize_skill(skill)
+
+    if not SkillsManager.HasSkill(skill_slug):
+        mensaje = "La habilidad indicada no está registrada."
+    else:
+        bot_username = update.get_bot().username or ""
+        comando_confirmacion = _formatear_comando_enlace(
+            f"/confirmar_eliminar {skill_slug}", bot_username
+        )
+
+        Database.disconnect()
+        await update.message.reply_text(
+            (
+                f"Vas a eliminar la habilidad: {skill_slug}.\n"
+                f"Confirmá tocando {comando_confirmacion} o cancelá con /habilidades.\n"
+                "Si no se completa automáticamente, copiá y enviá la línea mostrada."
+            ),
+            parse_mode=ParseMode.HTML,
+            disable_web_page_preview=True,
+        )
+        return
+
+    estado_habilidades = _formatear_estado_habilidades(SkillsManager)
+
+    Database.disconnect()
+    await update.message.reply_text(f"{mensaje}\n\n{estado_habilidades}")
+
+
+async def limpiar(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    TelegramUserID = update.effective_user.id
+
+    Database = WorkanaBotDatabase()
+    Database.connect()
+
+    if not Database.IsConnected:
+        await update.message.reply_text("No es posible conectarse a la base de datos.")
+        return
+
+    SkillsManager = UserSkills(TelegramUserID, Database)
+    habilidades_actuales = SkillsManager.GetAll()
+
+    if not habilidades_actuales:
+        mensaje = "No tenés habilidades para limpiar."
+    else:
+        Database.disconnect()
+        await update.message.reply_text(
+            (
+                "Vas a eliminar todas tus habilidades. ¿Confirmás?\n"
+                "Esta acción no se puede deshacer.\n\n"
+                "Enviá /confirmar_limpiar para continuar o /habilidades para cancelar."
+            )
+        )
+        return
+
+    estado_habilidades = _formatear_estado_habilidades(SkillsManager)
+
+    Database.disconnect()
+    await update.message.reply_text(f"{mensaje}\n\n{estado_habilidades}")
+
+
+async def confirmar_eliminar(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    TelegramUserID = update.effective_user.id
+    skill = " ".join(context.args).strip()
+
+    if not skill:
+        await update.message.reply_text(
+            "Indica la habilidad a eliminar: /confirmar_eliminar <habilidad>.\n"
+            "Para ver tus opciones usá /eliminar."
+        )
+        return
+
+    mensaje = _eliminar_habilidad_confirmada(TelegramUserID, skill)
+    await update.message.reply_text(mensaje)
+
+
+async def confirmar_limpiar(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    TelegramUserID = update.effective_user.id
+    mensaje = _limpiar_habilidades_confirmado(TelegramUserID)
+    await update.message.reply_text(mensaje)
+
+
+def _borrar_cuenta_confirmada(user_id: int, bot_username: str) -> str:
+    Database = WorkanaBotDatabase()
+    Database.connect()
+
+    if not Database.IsConnected:
+        Database.disconnect()
+        return "No es posible conectarse a la base de datos."
+
+    usuario = User(user_id, Database)
+
+    if not usuario.IsRegistered:
+        mensaje = "No estás registrado. Usá /registrar para crear tu cuenta."
+    elif not usuario.IsActivated:
+        reactivar = _formatear_comando_enlace("/registrar", bot_username)
+        mensaje = (
+            "Tu cuenta ya estaba desactivada.\n"
+            f"Si querés reactivarla, enviá {reactivar} y luego /start."
+        )
+    else:
+        borrado = usuario.SoftDelete()
+        if borrado:
+            mensaje = (
+                "Tu cuenta fue desactivada.\n"
+                "Dejarás de recibir notificaciones hasta que la reactivés con /registrar."
+            )
+        else:
+            mensaje = "No se pudo borrar la cuenta. Intentá nuevamente más tarde."
+
+    Database.disconnect()
+    return mensaje
+
+
+def _formatear_comando_enlace(comando: str, bot_username: str) -> str:
+    comando_visible = html.escape(comando)
+
+    if bot_username:
+        comando_encoded = quote(comando)
+        return (
+            f"<a href=\"https://t.me/{bot_username}?text={comando_encoded}\">"
+            f"{comando_visible}</a>"
+        )
+
+    return comando_visible
+
+
+def _formatear_estado_habilidades(skills_manager: UserSkills) -> str:
+    habilidades_actuales = skills_manager.GetAll()
 
     if habilidades_actuales:
         lista = "\n".join(f"- {s}" for s in habilidades_actuales)
@@ -84,8 +386,55 @@ async def habilidades(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         mensaje = "No tienes habilidades registradas."
 
-    mensaje += "\n\nOpciones:\n/agregar_habilidad\n/eliminar_habilidad\n/limpiar_habilidades"
+    mensaje += "\n\nOpciones:\n/agregar\n/eliminar\n/limpiar"
+    return mensaje
 
-    await update.message.reply_text(mensaje)
+
+def _eliminar_habilidad_confirmada(user_id: int, skill_slug: str) -> str:
+    Database = WorkanaBotDatabase()
+    Database.connect()
+
+    if not Database.IsConnected:
+        Database.disconnect()
+        return "No es posible conectarse a la base de datos."
+
+    SkillsManager = UserSkills(user_id, Database)
+
+    if not SkillsManager.HasSkill(skill_slug):
+        mensaje = "La habilidad indicada no está registrada."
+    else:
+        eliminado = SkillsManager.Remove(skill_slug)
+        if eliminado:
+            mensaje = f"Habilidad eliminada: {skill_slug}."
+        else:
+            mensaje = "No se pudo eliminar la habilidad. Intentá nuevamente más tarde."
+
+    estado = _formatear_estado_habilidades(SkillsManager)
     Database.disconnect()
+    return f"{mensaje}\n\n{estado}"
+
+
+def _limpiar_habilidades_confirmado(user_id: int) -> str:
+    Database = WorkanaBotDatabase()
+    Database.connect()
+
+    if not Database.IsConnected:
+        Database.disconnect()
+        return "No es posible conectarse a la base de datos."
+
+    SkillsManager = UserSkills(user_id, Database)
+    habilidades_actuales = SkillsManager.GetAll()
+
+    if not habilidades_actuales:
+        mensaje = "No tenés habilidades para limpiar."
+    else:
+        eliminado = SkillsManager.ClearAll()
+        if eliminado:
+            mensaje = f"Se limpiaron {len(habilidades_actuales)} habilidades."
+        else:
+            mensaje = "No se pudieron limpiar las habilidades. Intentá nuevamente más tarde."
+
+    estado = _formatear_estado_habilidades(SkillsManager)
+    Database.disconnect()
+    return f"{mensaje}\n\n{estado}"
 
