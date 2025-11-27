@@ -130,6 +130,7 @@ async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/registrar - Registrar tu usuario para recibir oportunidades\n"
         "/start - Iniciar el monitoreo de nuevas oportunidades\n"
         "/stop - Detener el monitoreo\n"
+        "/borrar - Desactivar tu cuenta de forma segura\n"
         "/habilidades - Ver opciones para administrar tus habilidades\n"
         "/eliminar_cuenta - Eliminar tu cuenta del bot\n"
         "/menu - Mostrar los comandos disponibles en forma de lista"
@@ -150,6 +151,70 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def comandos_invalidos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Comando no reconocido. Usá /ayuda para ver los comandos disponibles.")
+
+
+async def manejar_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    data = query.data or ""
+    TelegramUserID = query.from_user.id
+
+    if not data:
+        await query.answer()
+        return
+
+    if data.startswith("elim_skill:"):
+        skill_slug = data.split(":", 1)[1]
+        teclado = _build_confirm_keyboard(
+            f"elim_confirm:{skill_slug}", "elim_cancel", "Sí, eliminar", "Cancelar"
+        )
+        await query.answer()
+        await query.message.reply_text(
+            f"¿Confirmás eliminar la habilidad: {skill_slug}?", reply_markup=teclado
+        )
+        return
+
+    if data.startswith("elim_confirm:"):
+        skill_slug = data.split(":", 1)[1]
+        mensaje = _eliminar_habilidad_confirmada(TelegramUserID, skill_slug)
+        await query.answer()
+        await query.message.reply_text(mensaje)
+        return
+
+    if data == "elim_cancel":
+        await query.answer("Operación cancelada")
+        Database = WorkanaBotDatabase()
+        Database.connect()
+        if not Database.IsConnected:
+            await query.message.reply_text("No es posible conectarse a la base de datos.")
+            Database.disconnect()
+            return
+        SkillsManager = UserSkills(TelegramUserID, Database)
+        estado = _formatear_estado_habilidades(SkillsManager)
+        Database.disconnect()
+        await query.message.reply_text(f"Cancelaste la eliminación.\n\n{estado}")
+        return
+
+    if data == "limpiar_confirm":
+        mensaje = _limpiar_habilidades_confirmado(TelegramUserID)
+        await query.answer()
+        await query.message.reply_text(mensaje)
+        return
+
+    if data == "limpiar_cancel":
+        await query.answer("Operación cancelada")
+        Database = WorkanaBotDatabase()
+        Database.connect()
+        if not Database.IsConnected:
+            await query.message.reply_text("No es posible conectarse a la base de datos.")
+            Database.disconnect()
+            return
+        SkillsManager = UserSkills(TelegramUserID, Database)
+        estado = _formatear_estado_habilidades(SkillsManager)
+        Database.disconnect()
+        await query.message.reply_text(f"Cancelaste la limpieza.\n\n{estado}")
+        return
+
+    await query.answer()
 
 async def habilidades(update: Update, context: ContextTypes.DEFAULT_TYPE):
     TelegramUserID = update.effective_user.id
