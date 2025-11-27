@@ -27,7 +27,19 @@ class User:
 
     def Register(self, Username: str) -> bool:
         if self.IsRegistered:
-            return False
+            if self.IsActivated:
+                return False
+
+            Query = (
+                "UPDATE usuarios_bot SET nombre_usuario = ?, activo = TRUE "
+                "WHERE telegram_user_id = ?"
+            )
+            Success = self._db.execute_non_query(Query, (Username, self.UserID))
+            if Success:
+                self.Username = Username
+                self._IsActivated = True
+            return Success
+
         Query = "INSERT INTO usuarios_bot (telegram_user_id, nombre_usuario) VALUES (?, ?)"
         Success = self._db.execute_non_query(Query, (self.UserID, Username))
         if Success:
@@ -48,6 +60,17 @@ class User:
     def Deactivate(self) -> bool:
         if not self.IsRegistered:
             return False
+        Query = "UPDATE usuarios_bot SET activo = FALSE WHERE telegram_user_id = ?"
+        Success = self._db.execute_non_query(Query, (self.UserID,))
+        if Success:
+            self._IsActivated = False
+        return Success
+
+    def SoftDelete(self) -> bool:
+        """Marca al usuario como inactivo sin borrar el registro."""
+        if not self.IsRegistered:
+            return False
+
         Query = "UPDATE usuarios_bot SET activo = FALSE WHERE telegram_user_id = ?"
         Success = self._db.execute_non_query(Query, (self.UserID,))
         if Success:

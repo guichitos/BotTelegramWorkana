@@ -54,7 +54,8 @@ async def registrar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         RegistrationSuccess = BotUser.Register(TelegramUsername)
         if RegistrationSuccess:
-            await update.message.reply_text("Usuario registrado correctamente.")
+            estado = "reactivado" if BotUser.IsActivated else "registrado"
+            await update.message.reply_text(f"Usuario {estado} correctamente.")
         else:
             await update.message.reply_text("No fue posible registrar el usuario.")
 
@@ -78,12 +79,68 @@ async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"{obtener_codigo_error_conexion()}."
         )
 
+async def borrar(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    TelegramUserID = update.effective_user.id
+
+    Database = WorkanaBotDatabase()
+    Database.connect()
+
+    if not Database.IsConnected:
+        await update.message.reply_text("No es posible conectarse a la base de datos.")
+        return
+
+    usuario = User(TelegramUserID, Database)
+    bot_username = update.get_bot().username or ""
+
+    if not usuario.IsRegistered:
+        Database.disconnect()
+        await update.message.reply_text("No estás registrado. Usá /registrar para crear tu cuenta.")
+        return
+
+    if not usuario.IsActivated:
+        Database.disconnect()
+        reactivar = _formatear_comando_enlace("/registrar", bot_username)
+        await update.message.reply_text(
+            ("Tu cuenta ya está desactivada.\n"
+             f"Si querés reactivarla, enviá {reactivar} y luego /start."),
+            parse_mode=ParseMode.HTML,
+            disable_web_page_preview=True,
+        )
+        return
+
+    comando_confirmacion = _formatear_comando_enlace("/confirmar_borrar", bot_username)
+    Database.disconnect()
+
+    await update.message.reply_text(
+        (
+            "Vas a borrar tu cuenta del bot.\n"
+            "Esto detendrá el envío de mensajes y conservará tus datos de forma segura.\n"
+            f"Confirmá tocando {comando_confirmacion} o cancelá con /menu.\n"
+            "Si no se completa automáticamente, copiá y enviá la línea mostrada."
+        ),
+        parse_mode=ParseMode.HTML,
+        disable_web_page_preview=True,
+    )
+
+
+async def confirmar_borrar(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    TelegramUserID = update.effective_user.id
+    bot_username = update.get_bot().username or ""
+
+    mensaje = _borrar_cuenta_confirmada(TelegramUserID, bot_username)
+    await update.message.reply_text(
+        mensaje,
+        parse_mode=ParseMode.HTML,
+        disable_web_page_preview=True,
+    )
+
 async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
     mensaje = (
         "Comandos disponibles:\n\n"
         "/registrar - Registrar tu usuario para recibir oportunidades\n"
         "/start - Iniciar el monitoreo de nuevas oportunidades\n"
         "/stop - Detener el monitoreo\n"
+        "/borrar - Desactivar tu cuenta de forma segura\n"
         "/habilidades - Ver opciones para administrar tus habilidades\n"
         "/menu - Mostrar los comandos disponibles en forma de lista"
     )
@@ -95,6 +152,7 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/registrar\n"
         "/start\n"
         "/stop\n"
+        "/borrar\n"
         "/habilidades\n"
         "/ayuda"
     )
@@ -336,6 +394,38 @@ async def confirmar_limpiar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     TelegramUserID = update.effective_user.id
     mensaje = _limpiar_habilidades_confirmado(TelegramUserID)
     await update.message.reply_text(mensaje)
+
+
+def _borrar_cuenta_confirmada(user_id: int, bot_username: str) -> str:
+    Database = WorkanaBotDatabase()
+    Database.connect()
+
+    if not Database.IsConnected:
+        Database.disconnect()
+        return "No es posible conectarse a la base de datos."
+
+    usuario = User(user_id, Database)
+
+    if not usuario.IsRegistered:
+        mensaje = "No estás registrado. Usá /registrar para crear tu cuenta."
+    elif not usuario.IsActivated:
+        reactivar = _formatear_comando_enlace("/registrar", bot_username)
+        mensaje = (
+            "Tu cuenta ya estaba desactivada.\n"
+            f"Si querés reactivarla, enviá {reactivar} y luego /start."
+        )
+    else:
+        borrado = usuario.SoftDelete()
+        if borrado:
+            mensaje = (
+                "Tu cuenta fue desactivada.\n"
+                "Dejarás de recibir notificaciones hasta que la reactivés con /registrar."
+            )
+        else:
+            mensaje = "No se pudo borrar la cuenta. Intentá nuevamente más tarde."
+
+    Database.disconnect()
+    return mensaje
 
 
 def _formatear_comando_enlace(comando: str, bot_username: str) -> str:
