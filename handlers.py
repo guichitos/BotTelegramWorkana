@@ -437,7 +437,7 @@ def _formatear_estado_habilidades(skills_manager: UserSkills) -> str:
     else:
         mensaje = "No tienes habilidades registradas."
 
-    mensaje += "\n\nOpciones:\n/agregar\n/eliminar_habilidad\n/limpiar"
+    mensaje += "\n\nOpciones:\n/agregar\n/eliminar_habilidad\n/limpiar\n/menu"
     return mensaje
 
 
