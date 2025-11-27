@@ -143,7 +143,7 @@ async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/stop - Detener el monitoreo\n"
         "/borrar - Desactivar tu cuenta de forma segura\n"
         "/habilidades - Ver opciones para administrar tus habilidades\n"
-        "/eliminar_cuenta (eliminar-cuenta) - Eliminar tu cuenta del bot\n"
+        "/eliminar_cuenta - Eliminar tu cuenta del bot\n"
         "/menu - Mostrar los comandos disponibles en forma de lista"
     )
     await update.message.reply_text(mensaje)
@@ -155,7 +155,7 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/habilidades\n"
         "/start\n"
         "/stop\n"
-        "/eliminar_cuenta (eliminar-cuenta)\n"
+        "/eliminar_cuenta\n"
         "/ayuda"
     )
     await update.message.reply_text(mensaje)
