@@ -3,6 +3,7 @@ from typing import List
 from datetime import datetime
 from projects_db import proyectosDatabase
 from models import Project
+from send_telegram_message import mensaje as send_telegram_message
 
 class ProjectRepository:
     def __init__(self):
@@ -11,6 +12,8 @@ class ProjectRepository:
     def SaveProjects(self, projects: List[Project]) -> int:
         inserted = 0
         for p in projects:
+            was_existing = self._db.proyecto_exists_by_url(p.Url)
+
             ok_id = self._db.upsert_by_url(
                 titulo=p.Title,
                 enlace=p.Url,
@@ -19,6 +22,11 @@ class ProjectRepository:
             )
             if ok_id:
                 inserted += 1
+                if not was_existing:
+                    try:
+                        send_telegram_message(p.Title, p.Url)
+                    except Exception as ex:
+                        print(f"Error enviando mensaje a Telegram: {ex}")
         return inserted
     
 if __name__ == "__main__":
