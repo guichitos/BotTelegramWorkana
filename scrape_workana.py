@@ -36,6 +36,9 @@ def ScrapeWorkanaProjects(url: str) -> List[Project]:
                     continue
                 desc = it.find_element(By.CSS_SELECTOR, ".html-desc.project-details").text
                 link = it.find_element(By.CSS_SELECTOR, "a[href^='/job/']").get_attribute("href")
+                if not link:
+                    # Some cards may not include a valid URL; skip them to avoid None values
+                    continue
                 results.append(Project(Title=title, Description=desc, Url=link))
             except Exception:
                 # omite item defectuoso y sigue
