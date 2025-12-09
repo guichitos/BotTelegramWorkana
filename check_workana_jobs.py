@@ -72,6 +72,7 @@ def schedule_loop(interval_scrape: int, interval_skill_scan: int) -> None:
     try:
         while True:
             now = datetime.now()
+            ran_task = False
 
             if now >= next_scrape:
                 try:
@@ -80,6 +81,7 @@ def schedule_loop(interval_scrape: int, interval_skill_scan: int) -> None:
                 except Exception as ex:
                     print(f"[SCRAPER] Error: {ex}")
                 next_scrape = now + timedelta(minutes=interval_scrape)
+                ran_task = True
 
             if now >= next_skill_scan:
                 try:
@@ -87,6 +89,11 @@ def schedule_loop(interval_scrape: int, interval_skill_scan: int) -> None:
                 except Exception as ex:
                     print(f"[SKILLS] Error: {ex}")
                 next_skill_scan = now + timedelta(minutes=interval_skill_scan)
+                ran_task = True
+
+            if ran_task:
+                proxima = min(next_scrape, next_skill_scan).strftime("%H:%M:%S")
+                print(f"[SCHEDULE] Próxima ejecución programada a las {proxima}")
 
             time.sleep(5)
     except KeyboardInterrupt:
