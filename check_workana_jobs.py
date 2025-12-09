@@ -32,8 +32,8 @@ def main():
     print("Ejecutado: ", datetime.now().strftime("%H:%M:%S"))
     gestionar_desde_telegram(entorno)
 
-    if entorno not in ["local", "vps"]:
-        print("Entorno no reconocido. Debe ser 'local' o 'vps'.")
+    if entorno not in ["local", "laptop", "vps"]:
+        print("Entorno no reconocido. Debe ser 'local', 'laptop' o 'vps'.")
         return
 
     if not debe_ejecutarse():

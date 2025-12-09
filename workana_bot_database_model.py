@@ -1,6 +1,7 @@
 # monitor_workana/config_workana_bot_db.py
 
 import mariadb
+import os
 from local_o_vps import entorno
 
 class WorkanaBotDatabase:
@@ -14,20 +15,27 @@ class WorkanaBotDatabase:
     def _get_connection_config(self) -> dict:
         if entorno == "local":
             return {
-                "host": "127.0.0.1",
-                "port": 3306,
-                "database": "proyectos_workana_db",
-                "user": "root",
-                "password": ""
+                "host": os.getenv("LOCAL_PROJECTS_DB_HOST", "127.0.0.1"),
+                "port": int(os.getenv("LOCAL_PROJECTS_DB_PORT", 3306)),
+                "database": os.getenv("LOCAL_PROJECTS_DB_NAME", "proyectos_workana_db"),
+                "user": os.getenv("LOCAL_PROJECTS_DB_USER", "root"),
+                "password": os.getenv("LOCAL_PROJECTS_DB_PASS", ""),
             }
-        else:
+        if entorno == "laptop":
             return {
-                "host": "127.0.0.1",
-                "port": 3306,
-                "database": "admin_proyectos_workana",
-                "user": "admin_user_proyectos_db",
-                "password": "passdeuser_proy_DB_25"
+                "host": os.getenv("LAPTOP_PROJECTS_DB_HOST", "127.0.0.1"),
+                "port": int(os.getenv("LAPTOP_PROJECTS_DB_PORT", 3306)),
+                "database": os.getenv("LAPTOP_PROJECTS_DB_NAME", "proyectos_workana_laptop"),
+                "user": os.getenv("LAPTOP_PROJECTS_DB_USER", "root"),
+                "password": os.getenv("LAPTOP_PROJECTS_DB_PASS", ""),
             }
+        return {
+            "host": os.getenv("VPS_PROJECTS_DB_HOST", "127.0.0.1"),
+            "port": int(os.getenv("VPS_PROJECTS_DB_PORT", 3306)),
+            "database": os.getenv("VPS_PROJECTS_DB_NAME", "admin_proyectos_workana"),
+            "user": os.getenv("VPS_PROJECTS_DB_USER", "admin_user_proyectos_db"),
+            "password": os.getenv("VPS_PROJECTS_DB_PASS", "passdeuser_proy_DB_25"),
+        }
 
     def connect(self):
         try:
