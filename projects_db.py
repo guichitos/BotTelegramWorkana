@@ -203,6 +203,35 @@ class proyectosDatabase:
         rows = self._db.execute_query(sql, (url,))
         return self._to_dict_row(rows[0]) if rows else None
 
+    def search_by_skills(self, skills: List[str], limit: int = 100) -> List[Dict[str, Any]]:
+        """
+        Find projects whose title or description mention any of the provided skills.
+        Uses a simple LIKE-based match against both the slug (with hyphens) and a
+        space-separated variant (hyphens -> spaces) for broader coverage.
+        """
+        normalized = [s.strip().lower() for s in skills if isinstance(s, str) and s.strip()]
+        if not normalized:
+            return []
+
+        clauses: List[str] = []
+        params: List[Any] = []
+        for skill in normalized:
+            variants = {skill, skill.replace("-", " ")}
+            for variant in variants:
+                clauses.append("LOWER(CONCAT_WS(' ', titulo, descripcion)) LIKE %s")
+                params.append(f"%{variant}%")
+
+        sql = f"""
+        SELECT id, user_id, fecha_hora, titulo, descripcion, enlace
+        FROM proyectos
+        WHERE {' OR '.join(clauses)}
+        ORDER BY (fecha_hora IS NULL), fecha_hora DESC, id DESC
+        LIMIT %s
+        """
+        params.append(limit)
+        rows = self._db.execute_query(sql, tuple(params))
+        return [self._to_dict_row(r) for r in rows]
+
     def bulk_insert(self, items: List[Dict[str, Any]]) -> int:
         count = 0
         for it in items:
