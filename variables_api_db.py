@@ -21,16 +21,23 @@ class VariablesApiController:
                 "port": int(os.getenv("LOCAL_DB_PORT", 3306)),
                 "database": os.getenv("LOCAL_DB_NAME", "variables_api"),
                 "user": os.getenv("LOCAL_DB_USER", "root"),
-                "password": os.getenv("LOCAL_DB_PASS", "")
+                "password": os.getenv("LOCAL_DB_PASS", ""),
             }
-        else:
+        if self._environment == "laptop":
             return {
-                "host": os.getenv("VPS_DB_HOST", "127.0.0.1"),
-                "port": int(os.getenv("VPS_DB_PORT", 3306)),
-                "database": os.getenv("VPS_DB_NAME", "admin_variables_api"),
-                "user": os.getenv("VPS_DB_USER", "admin_variables_user"),
-                "password": os.getenv("VPS_DB_PASS", "default-fallback")
+                "host": os.getenv("LAPTOP_DB_HOST", "127.0.0.1"),
+                "port": int(os.getenv("LAPTOP_DB_PORT", 3306)),
+                "database": os.getenv("LAPTOP_DB_NAME", "variables_api"),
+                "user": os.getenv("LAPTOP_DB_USER", "root"),
+                "password": os.getenv("LAPTOP_DB_PASS", ""),
             }
+        return {
+            "host": os.getenv("VPS_DB_HOST", "127.0.0.1"),
+            "port": int(os.getenv("VPS_DB_PORT", 3306)),
+            "database": os.getenv("VPS_DB_NAME", "admin_variables_api"),
+            "user": os.getenv("VPS_DB_USER", "admin_variables_user"),
+            "password": os.getenv("VPS_DB_PASS", "default-fallback"),
+        }
 
     def _connect(self) -> mariadb.Connection | None:
         """Intentar conectar con la base de datos evitando romper la ejecución."""
