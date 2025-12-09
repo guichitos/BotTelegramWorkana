@@ -1,12 +1,13 @@
 # monitor_workana/projects_db.py
 """
-proyectosDatabase (schema original): id, fecha_hora, titulo, descripcion, enlace.
+proyectosDatabase (schema original): id, user_id, fecha_hora, titulo, descripcion, enlace.
 
-__init__ : Inicializa el manager usando WorkanaBotDatabase y garantiza la existencia de la tabla.
+__init__ : Inicializa el manager usando WorkanaBotDatabase y garantiza la existencia de la tabla y un usuario por defecto.
 ensure_schema : Crea la tabla 'proyectos' con el esquema original si no existe (sin columnas extra).
-_to_dict_row : Convierte una fila (tuple) en un diccionario con claves id/fecha_hora/titulo/descripcion/enlace.
+ensure_default_user : Crea un usuario en usuarios_bot para cumplir el FK de proyectos.user_id si no existe.
+_to_dict_row : Convierte una fila (tuple) en un diccionario con claves id/user_id/fecha_hora/titulo/descripcion/enlace.
 proyecto_exists_by_url : Verifica si existe al menos un registro con el mismo enlace.
-insertar_proyecto : Inserta un proyecto (fecha_hora, titulo, descripcion, enlace) y devuelve su ID o None.
+insertar_proyecto : Inserta un proyecto (user_id, fecha_hora, titulo, descripcion, enlace) y devuelve su ID o None.
 upsert_by_url : Si existe un registro con ese enlace, lo actualiza; si no, inserta; devuelve el ID afectado.
 update_by_id : Actualiza solo los campos provistos del proyecto indicado por ID.
 delete_by_id : Elimina físicamente el registro indicado por ID.
@@ -16,20 +17,28 @@ bulk_insert : Inserta múltiples proyectos omitiendo los que no tengan titulo o 
 __main__ : Prueba rápida: conexión/lectura, upsert, actualización, listado y borrado del registro de prueba.
 """
 
+import os
 from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
 from workana_bot_database_model import WorkanaBotDatabase
+from user_skills_model import DEFAULT_USER_ID
 
 
 class proyectosDatabase:
     """
     Minimal controller for the original 'proyectos' table:
-    Columns: id, fecha_hora, titulo, descripcion, enlace
+    Columns: id, user_id, fecha_hora, titulo, descripcion, enlace
     """
 
-    def __init__(self, db: Optional[WorkanaBotDatabase] = None):
+    def __init__(self, db: Optional[WorkanaBotDatabase] = None, default_user_id: Optional[int] = None):
         self._db = db if db is not None else WorkanaBotDatabase()
+        # Respect explicit param, env var or fallback constant
+        self._default_user_id = default_user_id or int(
+            os.getenv("PROJECTS_DEFAULT_USER_ID", DEFAULT_USER_ID)
+        )
+
         self.ensure_schema()
+        self.ensure_default_user()
 
     # ---------------------------------
     # Schema (idempotent, original shape)
@@ -42,13 +51,32 @@ class proyectosDatabase:
         sql = """
         CREATE TABLE IF NOT EXISTS proyectos (
             id          INT AUTO_INCREMENT PRIMARY KEY,
+            user_id     INT NOT NULL,
             fecha_hora  DATETIME NULL,
             titulo      VARCHAR(255) NULL,
             descripcion TEXT NULL,
-            enlace      VARCHAR(255) NULL
+            enlace      VARCHAR(255) NULL,
+            CONSTRAINT fk_proyectos_usuario FOREIGN KEY (user_id)
+                REFERENCES usuarios_bot(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         """
         self._db.execute_non_query(sql)
+
+    def ensure_default_user(self) -> None:
+        """
+        Guarantee a user exists to satisfy FK constraint on proyectos.user_id.
+        """
+        existing = self._db.execute_query(
+            "SELECT id FROM usuarios_bot WHERE id = %s OR telegram_user_id = %s LIMIT 1",
+            (self._default_user_id, self._default_user_id),
+        )
+        if existing:
+            return
+
+        self._db.execute_non_query(
+            "INSERT INTO usuarios_bot (id, telegram_user_id, nombre_usuario, activo) VALUES (%s, %s, %s, TRUE)",
+            (self._default_user_id, self._default_user_id, "default_user"),
+        )
 
     # ---------------------------------
     # Helpers
@@ -57,10 +85,11 @@ class proyectosDatabase:
     def _to_dict_row(row: Tuple) -> Dict[str, Any]:
         return {
             "id": row[0],
-            "fecha_hora": row[1],
-            "titulo": row[2],
-            "descripcion": row[3],
-            "enlace": row[4],
+            "user_id": row[1],
+            "fecha_hora": row[2],
+            "titulo": row[3],
+            "descripcion": row[4],
+            "enlace": row[5],
         }
 
     # ---------------------------------
@@ -79,8 +108,13 @@ class proyectosDatabase:
     ) -> Optional[int]:
         if fecha_hora is None:
             fecha_hora = datetime.now()  # Hora actual
-        sql = "INSERT INTO proyectos (fecha_hora, titulo, descripcion, enlace) VALUES (%s, %s, %s, %s)"
-        ok = self._db.execute_non_query(sql, (fecha_hora, titulo, descripcion, enlace))
+        sql = (
+            "INSERT INTO proyectos (user_id, fecha_hora, titulo, descripcion, enlace) "
+            "VALUES (%s, %s, %s, %s, %s)"
+        )
+        ok = self._db.execute_non_query(
+            sql, (self._default_user_id, fecha_hora, titulo, descripcion, enlace)
+        )
         if not ok:
             return None
         return self._db.execute_scalar("SELECT id FROM proyectos WHERE enlace = %s ORDER BY id DESC LIMIT 1", (enlace,))
@@ -150,7 +184,7 @@ class proyectosDatabase:
 
     def get_recent(self, limit: int = 50) -> List[Dict[str, Any]]:
         sql = """
-        SELECT id, fecha_hora, titulo, descripcion, enlace
+        SELECT id, user_id, fecha_hora, titulo, descripcion, enlace
         FROM proyectos
         ORDER BY (fecha_hora IS NULL), fecha_hora DESC, id DESC
         LIMIT %s
@@ -160,7 +194,7 @@ class proyectosDatabase:
 
     def get_by_url(self, url: str) -> Optional[Dict[str, Any]]:
         sql = """
-        SELECT id, fecha_hora, titulo, descripcion, enlace
+        SELECT id, user_id, fecha_hora, titulo, descripcion, enlace
         FROM proyectos
         WHERE enlace = %s
         ORDER BY id DESC
