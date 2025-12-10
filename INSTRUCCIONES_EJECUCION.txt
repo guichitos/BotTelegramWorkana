@@ -1,0 +1,29 @@
+INSTRUCCIONES PARA CORRER EL SISTEMA
+====================================
+
+1) Preparación del entorno
+--------------------------
+- Usa Python 3.10+.
+- Instala las dependencias principales:
+  pip install python-telegram-bot==20.* mariadb selenium requests beautifulsoup4 python-dotenv
+- Asegúrate de tener instalado GeckoDriver/Firefox (Selenium) y que esté en el PATH.
+
+2) Configuración básica
+-----------------------
+- Define el entorno en local_o_vps.py ("local", "laptop" o "vps").
+- Ajusta las variables de entorno de base de datos si necesitas valores distintos a los predeterminados (LOCAL_*/LAPTOP_*/VPS_* en workana_bot_database_model.py).
+- Coloca tu token de Telegram en 01_bot.py (constante TOKEN) antes de iniciar el bot.
+
+3) Ejecución de los componentes principales
+-------------------------------------------
+- Bot de Telegram: inicia el bot que atiende comandos.
+  python 01_bot.py
+
+- Scheduler de scraping y escaneo de skills: ejecuta scraping periódico y revisa las skills de usuarios sobre los proyectos guardados.
+  python 02_check_workana_jobs.py
+
+4) Otros apuntes útiles
+-----------------------
+- Si solo quieres lanzar un scraping puntual sin scheduler, usa run_scraper_and_store.py (ajusta la URL de prueba o pásala como argumento dentro del código).
+- El archivo config_intervals.json controla los intervalos en minutos del scheduler (scrape_all_minutes y user_skill_scan_minutes).
+- Los logs se imprimen en consola; puedes redirigir la salida a un archivo si necesitas auditoría.
