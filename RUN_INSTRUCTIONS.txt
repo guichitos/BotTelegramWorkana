@@ -1,0 +1,38 @@
+Guía rápida para ejecutar el sistema
+====================================
+
+Visión general
+--------------
+El sistema se compone de dos procesos independientes:
+1) 00_run_scheduler.py: realiza el scraping general de Workana sin filtros y ejecuta las búsquedas por skills sobre la base de datos ya almacenada.
+2) 00_run_bot.py: atiende el bot de Telegram para que los usuarios gestionen sus skills y reciban notificaciones.
+
+Requisitos previos
+------------------
+- Python 3 instalado.
+- Dependencias Python instaladas según requirements del proyecto.
+- Base de datos configurada y accesible (ver proyectos_workana_db.sql para la estructura).
+
+Cómo configurar los intervalos
+------------------------------
+- Los intervalos de ejecución se definen en config_intervals.json.
+- Por defecto, ambos valores están en 5 minutos:
+  {
+    "scrape_all_minutes": 5,
+    "user_skill_scan_minutes": 5
+  }
+- Modifica esos valores si necesitas otros tiempos y guarda el archivo.
+
+Cómo ejecutar
+-------------
+1) En una terminal, inicia el scheduler de scraping y búsqueda en BD:
+   python 00_run_scheduler.py
+
+2) En otra terminal (o proceso separado), inicia el bot de Telegram:
+   python 00_run_bot.py
+
+Recomendaciones
+---------------
+- Mantén cada proceso en su propia terminal/servicio para que un fallo no detenga al otro.
+- Revisa la consola: el scheduler informa la hora de la próxima ejecución después de cada ciclo.
+- Si actualizas config_intervals.json, reinicia el scheduler para aplicar los nuevos intervalos.

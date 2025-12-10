@@ -1,4 +1,4 @@
-# bot.py
+# 00_run_bot.py - Punto de entrada para iniciar el bot de Telegram
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
 from handlers import (
     start,
