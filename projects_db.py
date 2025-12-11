@@ -38,6 +38,7 @@ class proyectosDatabase:
         )
 
         self.ensure_schema()
+        self.ensure_project_skills_schema()
         self.ensure_default_user()
 
     # ---------------------------------
@@ -58,6 +59,26 @@ class proyectosDatabase:
             enlace      VARCHAR(255) NULL,
             CONSTRAINT fk_proyectos_usuario FOREIGN KEY (user_id)
                 REFERENCES usuarios_bot(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        """
+        self._db.execute_non_query(sql)
+
+    def ensure_project_skills_schema(self) -> None:
+        """
+        Creates project_skills table for storing scraped skills per project.
+        Safe to run multiple times.
+        """
+        sql = """
+        CREATE TABLE IF NOT EXISTS project_skills (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            project_id INT NOT NULL,
+            skill_name VARCHAR(255) NOT NULL,
+            skill_slug VARCHAR(255) NULL,
+            skill_href VARCHAR(255) NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uniq_project_skill (project_id, skill_name, skill_slug),
+            CONSTRAINT fk_project_skills_project FOREIGN KEY (project_id)
+                REFERENCES proyectos(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         """
         self._db.execute_non_query(sql)
@@ -247,6 +268,31 @@ class proyectosDatabase:
             ):
                 count += 1
         return count
+
+    # ---------------------------------
+    # Skills
+    # ---------------------------------
+    def replace_project_skills(self, project_id: int, skills: List[Dict[str, Any]]) -> None:
+        """
+        Replace skills for a project with the provided list.
+        Each skill may contain name, slug and href keys.
+        """
+        # Remove existing skills for the project first
+        self._db.execute_non_query("DELETE FROM project_skills WHERE project_id = %s", (project_id,))
+
+        for skill in skills:
+            name = skill.get("name")
+            if not name:
+                continue
+            slug = skill.get("slug")
+            href = skill.get("href")
+            self._db.execute_non_query(
+                """
+                INSERT INTO project_skills (project_id, skill_name, skill_slug, skill_href)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (project_id, name, slug, href),
+            )
 
 
 # Main de prueba (con inserción, lectura, actualización, listado y borrado físico)

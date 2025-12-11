@@ -22,6 +22,11 @@ class ProjectRepository:
             )
             if ok_id:
                 inserted += 1
+                if p.Skills:
+                    try:
+                        self._db.replace_project_skills(ok_id, p.Skills)
+                    except Exception as ex:
+                        print(f"Error guardando skills para proyecto {ok_id}: {ex}")
                 if not was_existing:
                     try:
                         send_telegram_message(p.Title, p.Url)
