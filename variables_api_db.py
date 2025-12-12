@@ -52,20 +52,27 @@ class VariablesApiController:
             print(f"⚠️ No se pudo conectar a la base de datos de variables: {e}")
             return None
 
-    @property
-    def ScriptMustRun(self) -> bool:
+    def _get_boolean_variable(self, name: str) -> bool:
         try:
             if not self._connection:
                 return False
             cursor = self._connection.cursor()
-            cursor.execute("SELECT value FROM variables WHERE name = 'correr_workana_script' LIMIT 1")
+            cursor.execute("SELECT value FROM variables WHERE name = ? LIMIT 1", (name,))
             result = cursor.fetchone()
             if result:
-                return result[0].strip().lower() in ["1", "true", "t", "yes"]
+                return str(result[0]).strip().lower() in ["1", "true", "t", "yes"]
             return False
         except mariadb.Error as e:
-            print(f"❌ Error al consultar la variable de ejecución: {e}")
+            print(f"❌ Error al consultar la variable '{name}': {e}")
             return False
+
+    @property
+    def ScriptMustRun(self) -> bool:
+        return self._get_boolean_variable("correr_workana_script")
+
+    @property
+    def GeneralScraperEnabled(self) -> bool:
+        return self._get_boolean_variable("general_scraper_enabled")
 
     @property
     def IsConnected(self) -> bool:
@@ -83,25 +90,31 @@ class VariablesApiController:
         return self._connection_error_code
 
     def StartScraping(self) -> bool:
-        return self._update_execution_variable("true")
+        return self._update_execution_variable("correr_workana_script", "true")
 
     def StopScraping(self) -> bool:
-        return self._update_execution_variable("false")
+        return self._update_execution_variable("correr_workana_script", "false")
 
-    def _update_execution_variable(self, value: str) -> bool:
+    def EnableGeneralScraper(self) -> bool:
+        return self._update_execution_variable("general_scraper_enabled", "true")
+
+    def DisableGeneralScraper(self) -> bool:
+        return self._update_execution_variable("general_scraper_enabled", "false")
+
+    def _update_execution_variable(self, name: str, value: str) -> bool:
         if not self._connection:
             print("⚠️ No hay conexión a la base de datos para actualizar la variable.")
             return False
         try:
             cursor = self._connection.cursor()
             cursor.execute(
-                "UPDATE variables SET value = ? WHERE name = 'correr_workana_script'",
-                (value,),
+                "UPDATE variables SET value = ? WHERE name = ?",
+                (value, name),
             )
             self._connection.commit()
             return True
         except mariadb.Error as e:
-            print(f"❌ Error al actualizar variable de ejecución: {e}")
+            print(f"❌ Error al actualizar la variable '{name}': {e}")
             return False
 
     def CloseConnection(self):
@@ -135,7 +148,9 @@ if __name__ == "__main__":
 
     # 🔁 Restaurar estado inicial
     print("🔁 Restaurando estado inicial...")
-    if controller._update_execution_variable("true" if initial_state else "false"):
+    if controller._update_execution_variable(
+        "correr_workana_script", "true" if initial_state else "false"
+    ):
         print("✅ Estado restaurado correctamente")
     else:
         print("❌ No se pudo restaurar el estado")

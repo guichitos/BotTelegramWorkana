@@ -91,26 +91,6 @@ class proyectosDatabase:
         """
         self._db.execute_non_query(sql)
 
-    def ensure_project_skills_schema(self) -> None:
-        """
-        Creates project_skills table for storing scraped skills per project.
-        Safe to run multiple times.
-        """
-        sql = """
-        CREATE TABLE IF NOT EXISTS project_skills (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            project_id INT NOT NULL,
-            skill_name VARCHAR(255) NOT NULL,
-            skill_slug VARCHAR(255) NULL,
-            skill_href VARCHAR(255) NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE KEY uniq_project_skill (project_id, skill_name, skill_slug),
-            CONSTRAINT fk_project_skills_project FOREIGN KEY (project_id)
-                REFERENCES proyectos(id) ON DELETE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-        """
-        self._db.execute_non_query(sql)
-
     def ensure_default_user(self) -> None:
         """
         Guarantee a user exists to satisfy FK constraint on projects.user_id.

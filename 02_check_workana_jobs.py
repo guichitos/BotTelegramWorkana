@@ -15,7 +15,7 @@ from run_scraper_and_store import Run as RunScraper
 from telegram_flag_manager import gestionar_desde_telegram
 from user_skills_model import UserSkills
 from workana_bot_database_model import WorkanaBotDatabase
-from workana_flag_manager import debe_ejecutarse
+from workana_flag_manager import debe_ejecutarse, debe_scrapear_general
 
 
 def VerifyConnection(db: proyectosDatabase) -> None:
@@ -75,11 +75,14 @@ def schedule_loop(interval_scrape: int, interval_skill_scan: int) -> None:
             ran_task = False
 
             if now >= next_scrape:
-                try:
-                    inserted = scrape_all_projects()
-                    print(f"[SCRAPER] Insertados/actualizados: {inserted}")
-                except Exception as ex:
-                    print(f"[SCRAPER] Error: {ex}")
+                if debe_scrapear_general():
+                    try:
+                        inserted = scrape_all_projects()
+                        print(f"[SCRAPER] Insertados/actualizados: {inserted}")
+                    except Exception as ex:
+                        print(f"[SCRAPER] Error: {ex}")
+                else:
+                    print("[SCRAPER] Scraper general desactivado; se omite esta ejecución.")
                 next_scrape = now + timedelta(minutes=interval_scrape)
                 ran_task = True
 
