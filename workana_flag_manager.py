@@ -9,6 +9,22 @@ config = VariablesApiController(entorno)
 def debe_ejecutarse() -> bool:
     return config.ScriptMustRun
 
+
+def debe_scrapear_general(default_if_unreachable: bool | None = None) -> bool:
+    """
+    Indicate whether the general scraper should run.
+
+    If the variables DB is reachable, return the remote flag. Otherwise, fall
+    back to ``default_if_unreachable`` when provided so local config can drive
+    the decision instead of silently disabling the scraper.
+    """
+
+    if config.IsConnected:
+        return config.GeneralScraperEnabled
+    if default_if_unreachable is not None:
+        return default_if_unreachable
+    return False
+
 def activar_script() -> bool:
     return config.StartScraping()
 

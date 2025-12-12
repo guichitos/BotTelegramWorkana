@@ -15,13 +15,18 @@ class ProjectRepository:
             was_existing = self._db.proyecto_exists_by_url(p.Url)
 
             ok_id = self._db.upsert_by_url(
-                titulo=p.Title,
-                enlace=p.Url,
-                descripcion=p.Description,
-                fecha_hora=datetime.now()
+                title=p.Title,
+                url=p.Url,
+                description=p.Description,
+                posted_at=datetime.now()
             )
             if ok_id:
                 inserted += 1
+                if p.Skills:
+                    try:
+                        self._db.replace_project_skills(ok_id, p.Skills)
+                    except Exception as ex:
+                        print(f"Error guardando skills para proyecto {ok_id}: {ex}")
                 if not was_existing:
                     try:
                         send_telegram_message(p.Title, p.Url)
