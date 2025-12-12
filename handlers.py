@@ -251,6 +251,12 @@ async def agregar(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     SkillsManager = UserSkills(TelegramUserID, Database)
+    if not SkillsManager.is_registered:
+        Database.disconnect()
+        await update.message.reply_text(
+            "No estás registrado. Usá /registrar para crear tu cuenta antes de agregar habilidades."
+        )
+        return
     skill_slug = SkillsManager.normalize_skill(skill)
 
     if SkillsManager.HasSkill(skill):

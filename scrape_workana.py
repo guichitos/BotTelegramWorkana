@@ -1,6 +1,5 @@
 # scrape_workana.py
 from typing import List
-from dataclasses import asdict
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -8,7 +7,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.firefox.options import Options
 from local_o_vps import entorno
-from models import Project
+from urllib.parse import parse_qs, urlparse
+from models import Project, Skill
 
 def CreateFirefoxDriver() -> webdriver.Firefox:
     options = Options()
@@ -39,7 +39,20 @@ def ScrapeWorkanaProjects(url: str) -> List[Project]:
                 if not link:
                     # Some cards may not include a valid URL; skip them to avoid None values
                     continue
-                results.append(Project(Title=title, Description=desc, Url=link))
+
+                skill_nodes = it.find_elements(By.CSS_SELECTOR, "div.skills a.skill")
+                skills: List[Skill] = []
+                for node in skill_nodes:
+                    try:
+                        href = node.get_attribute("href") or ""
+                        name = node.find_element(By.TAG_NAME, "h3").text.strip()
+                        parsed = urlparse(href)
+                        slug = parse_qs(parsed.query).get("skills", [""])[0]
+                        skills.append(Skill(name=name, slug=slug, href=href))
+                    except Exception:
+                        continue
+
+                results.append(Project(Title=title, Description=desc, Url=link, Skills=skills))
             except Exception:
                 # omite item defectuoso y sigue
                 continue
