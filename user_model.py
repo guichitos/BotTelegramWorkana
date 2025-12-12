@@ -10,7 +10,7 @@ class User:
         self._LoadUserData()
 
     def _LoadUserData(self):
-        Query = "SELECT nombre_usuario, activo FROM usuarios_bot WHERE telegram_user_id = ?"
+        Query = "SELECT username, active FROM bot_users WHERE telegram_user_id = ?"
         Result = self._db.execute_query(Query, (self.UserID,))
         if Result:
             self.Username = Result[0][0]
@@ -31,7 +31,7 @@ class User:
                 return False
 
             Query = (
-                "UPDATE usuarios_bot SET nombre_usuario = ?, activo = TRUE "
+                "UPDATE bot_users SET username = ?, active = TRUE "
                 "WHERE telegram_user_id = ?"
             )
             Success = self._db.execute_non_query(Query, (Username, self.UserID))
@@ -40,7 +40,7 @@ class User:
                 self._IsActivated = True
             return Success
 
-        Query = "INSERT INTO usuarios_bot (telegram_user_id, nombre_usuario) VALUES (?, ?)"
+        Query = "INSERT INTO bot_users (telegram_user_id, username) VALUES (?, ?)"
         Success = self._db.execute_non_query(Query, (self.UserID, Username))
         if Success:
             self.Username = Username
@@ -51,7 +51,7 @@ class User:
     def Activate(self) -> bool:
         if not self.IsRegistered:
             return False
-        Query = "UPDATE usuarios_bot SET activo = TRUE WHERE telegram_user_id = ?"
+        Query = "UPDATE bot_users SET active = TRUE WHERE telegram_user_id = ?"
         Success = self._db.execute_non_query(Query, (self.UserID,))
         if Success:
             self._IsActivated = True
@@ -60,7 +60,7 @@ class User:
     def Deactivate(self) -> bool:
         if not self.IsRegistered:
             return False
-        Query = "UPDATE usuarios_bot SET activo = FALSE WHERE telegram_user_id = ?"
+        Query = "UPDATE bot_users SET active = FALSE WHERE telegram_user_id = ?"
         Success = self._db.execute_non_query(Query, (self.UserID,))
         if Success:
             self._IsActivated = False
@@ -71,7 +71,7 @@ class User:
         if not self.IsRegistered:
             return False
 
-        Query = "UPDATE usuarios_bot SET activo = FALSE WHERE telegram_user_id = ?"
+        Query = "UPDATE bot_users SET active = FALSE WHERE telegram_user_id = ?"
         Success = self._db.execute_non_query(Query, (self.UserID,))
         if Success:
             self._IsActivated = False
@@ -80,7 +80,7 @@ class User:
     def Delete(self) -> bool:
         if not self.IsRegistered:
             return False
-        Query = "DELETE FROM usuarios_bot WHERE telegram_user_id = ?"
+        Query = "DELETE FROM bot_users WHERE telegram_user_id = ?"
         Success = self._db.execute_non_query(Query, (self.UserID,))
         if Success:
             self._IsRegistered = False
@@ -90,7 +90,7 @@ class User:
 
     @staticmethod
     def GetAllActive(Database: WorkanaBotDatabase) -> list[tuple[int, str]]:
-        Query = "SELECT telegram_user_id, nombre_usuario FROM usuarios_bot WHERE activo = TRUE"
+        Query = "SELECT telegram_user_id, username FROM bot_users WHERE active = TRUE"
         return Database.execute_query(Query)
 
 

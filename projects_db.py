@@ -1,20 +1,28 @@
 # monitor_workana/projects_db.py
 """
-proyectosDatabase (schema original): id, user_id, fecha_hora, titulo, descripcion, enlace.
+ProjectsDatabase: access layer for the Workana projects schema using English table
+and column names.
 
-__init__ : Inicializa el manager usando WorkanaBotDatabase y garantiza la existencia de la tabla y un usuario por defecto.
-ensure_schema : Crea la tabla 'proyectos' con el esquema original si no existe (sin columnas extra).
-ensure_default_user : Crea un usuario en usuarios_bot para cumplir el FK de proyectos.user_id si no existe.
-_to_dict_row : Convierte una fila (tuple) en un diccionario con claves id/user_id/fecha_hora/titulo/descripcion/enlace.
-proyecto_exists_by_url : Verifica si existe al menos un registro con el mismo enlace.
-insertar_proyecto : Inserta un proyecto (user_id, fecha_hora, titulo, descripcion, enlace) y devuelve su ID o None.
-upsert_by_url : Si existe un registro con ese enlace, lo actualiza; si no, inserta; devuelve el ID afectado.
+__init__ : Inicializa el manager usando WorkanaBotDatabase y garantiza la
+            existencia de la tabla y un usuario por defecto.
+ensure_schema : Crea la tabla 'projects' si no existe.
+ensure_default_user : Crea un usuario en bot_users para cumplir el FK de
+                      projects.user_id si no existe.
+_to_dict_row : Convierte una fila (tuple) en un diccionario con claves
+               id/user_id/posted_at/title/description/url.
+project_exists_by_url : Verifica si existe al menos un registro con la misma url.
+insert_project : Inserta un proyecto (user_id, posted_at, title, description, url)
+                 y devuelve su ID o None.
+upsert_by_url : Si existe un registro con esa url, lo actualiza; si no, inserta;
+                devuelve el ID afectado.
 update_by_id : Actualiza solo los campos provistos del proyecto indicado por ID.
 delete_by_id : Elimina físicamente el registro indicado por ID.
-get_recent : Obtiene los registros más recientes ordenados por fecha_hora (NULL al final) e ID.
-get_by_url : Devuelve el último registro que coincide con el enlace (o None si no hay).
-bulk_insert : Inserta múltiples proyectos omitiendo los que no tengan titulo o enlace.
-__main__ : Prueba rápida: conexión/lectura, upsert, actualización, listado y borrado del registro de prueba.
+get_recent : Obtiene los registros más recientes ordenados por posted_at (NULL al
+             final) e ID.
+get_by_url : Devuelve el último registro que coincide con la url (o None si no hay).
+bulk_insert : Inserta múltiples proyectos omitiendo los que no tengan title o url.
+__main__ : Prueba rápida: conexión/lectura, upsert, actualización, listado y
+           borrado del registro de prueba.
 """
 
 import os
@@ -26,8 +34,8 @@ from user_skills_model import DEFAULT_USER_ID
 
 class proyectosDatabase:
     """
-    Minimal controller for the original 'proyectos' table:
-    Columns: id, user_id, fecha_hora, titulo, descripcion, enlace
+    Minimal controller for the English 'projects' table:
+    Columns: id, user_id, posted_at, title, description, url
     """
 
     def __init__(self, db: Optional[WorkanaBotDatabase] = None, default_user_id: Optional[int] = None):
@@ -42,23 +50,43 @@ class proyectosDatabase:
         self.ensure_default_user()
 
     # ---------------------------------
-    # Schema (idempotent, original shape)
+    # Schema (idempotent, English shape)
     # ---------------------------------
     def ensure_schema(self) -> None:
         """
-        Creates the original table if it does not exist.
+        Creates the projects table if it does not exist.
         Does NOT add extra columns or constraints.
         """
         sql = """
-        CREATE TABLE IF NOT EXISTS proyectos (
+        CREATE TABLE IF NOT EXISTS projects (
             id          INT AUTO_INCREMENT PRIMARY KEY,
             user_id     INT NOT NULL,
-            fecha_hora  DATETIME NULL,
-            titulo      VARCHAR(255) NULL,
-            descripcion TEXT NULL,
-            enlace      VARCHAR(255) NULL,
-            CONSTRAINT fk_proyectos_usuario FOREIGN KEY (user_id)
-                REFERENCES usuarios_bot(id) ON DELETE CASCADE
+            posted_at   DATETIME NULL,
+            title       VARCHAR(255) NULL,
+            description TEXT NULL,
+            url         VARCHAR(255) NULL,
+            CONSTRAINT fk_projects_user FOREIGN KEY (user_id)
+                REFERENCES bot_users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        """
+        self._db.execute_non_query(sql)
+
+    def ensure_project_skills_schema(self) -> None:
+        """
+        Creates project_skills table for storing scraped skills per project.
+        Safe to run multiple times.
+        """
+        sql = """
+        CREATE TABLE IF NOT EXISTS project_skills (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            project_id INT NOT NULL,
+            skill_name VARCHAR(255) NOT NULL,
+            skill_slug VARCHAR(255) NULL,
+            skill_href VARCHAR(255) NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uniq_project_skill (project_id, skill_name, skill_slug),
+            CONSTRAINT fk_project_skills_project FOREIGN KEY (project_id)
+                REFERENCES projects(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         """
         self._db.execute_non_query(sql)
@@ -85,17 +113,17 @@ class proyectosDatabase:
 
     def ensure_default_user(self) -> None:
         """
-        Guarantee a user exists to satisfy FK constraint on proyectos.user_id.
+        Guarantee a user exists to satisfy FK constraint on projects.user_id.
         """
         existing = self._db.execute_query(
-            "SELECT id FROM usuarios_bot WHERE id = %s OR telegram_user_id = %s LIMIT 1",
+            "SELECT id FROM bot_users WHERE id = %s OR telegram_user_id = %s LIMIT 1",
             (self._default_user_id, self._default_user_id),
         )
         if existing:
             return
 
         self._db.execute_non_query(
-            "INSERT INTO usuarios_bot (id, telegram_user_id, nombre_usuario, activo) VALUES (%s, %s, %s, TRUE)",
+            "INSERT INTO bot_users (id, telegram_user_id, username, active) VALUES (%s, %s, %s, TRUE)",
             (self._default_user_id, self._default_user_id, "default_user"),
         )
 
@@ -107,93 +135,93 @@ class proyectosDatabase:
         return {
             "id": row[0],
             "user_id": row[1],
-            "fecha_hora": row[2],
-            "titulo": row[3],
-            "descripcion": row[4],
-            "enlace": row[5],
+            "posted_at": row[2],
+            "title": row[3],
+            "description": row[4],
+            "url": row[5],
         }
 
     # ---------------------------------
     # Queries
     # ---------------------------------
     def proyecto_exists_by_url(self, url: str) -> bool:
-        sql = "SELECT 1 FROM proyectos WHERE enlace = %s LIMIT 1"
+        sql = "SELECT 1 FROM projects WHERE url = %s LIMIT 1"
         return self._db.execute_scalar(sql, (url,)) is not None
 
     def insertar_proyecto(
         self,
-        titulo: str,
-        enlace: str,
-        fecha_hora: Optional[datetime] = None,
-        descripcion: Optional[str] = None,
+        title: str,
+        url: str,
+        posted_at: Optional[datetime] = None,
+        description: Optional[str] = None,
     ) -> Optional[int]:
-        if fecha_hora is None:
-            fecha_hora = datetime.now()  # Hora actual
+        if posted_at is None:
+            posted_at = datetime.now()  # Hora actual
         sql = (
-            "INSERT INTO proyectos (user_id, fecha_hora, titulo, descripcion, enlace) "
+            "INSERT INTO projects (user_id, posted_at, title, description, url) "
             "VALUES (%s, %s, %s, %s, %s)"
         )
         ok = self._db.execute_non_query(
-            sql, (self._default_user_id, fecha_hora, titulo, descripcion, enlace)
+            sql, (self._default_user_id, posted_at, title, description, url)
         )
         if not ok:
             return None
-        return self._db.execute_scalar("SELECT id FROM proyectos WHERE enlace = %s ORDER BY id DESC LIMIT 1", (enlace,))
+        return self._db.execute_scalar("SELECT id FROM projects WHERE url = %s ORDER BY id DESC LIMIT 1", (url,))
 
     def upsert_by_url(
         self,
-        titulo: str,
-        enlace: str,
-        descripcion: Optional[str] = None,
-        fecha_hora: Optional[datetime] = None,
+        title: str,
+        url: str,
+        description: Optional[str] = None,
+        posted_at: Optional[datetime] = None,
     ) -> Optional[int]:
         """
         Upsert without UNIQUE constraint:
-        - If a row with same enlace exists -> UPDATE the most recent one.
+        - If a row with same url exists -> UPDATE the most recent one.
         - Else -> INSERT.
         Returns affected row id or None.
         """
         existing = self._db.execute_query(
-            "SELECT id FROM proyectos WHERE enlace = %s ORDER BY id DESC LIMIT 1", (enlace,)
+            "SELECT id FROM projects WHERE url = %s ORDER BY id DESC LIMIT 1", (url,)
         )
         if existing:
             pid = existing[0][0]
             ok = self.update_by_id(
                 proyecto_id=pid,
-                titulo=titulo,
-                enlace=enlace,
-                descripcion=descripcion,
-                fecha_hora=fecha_hora,
+                title=title,
+                url=url,
+                description=description,
+                posted_at=posted_at,
             )
             return pid if ok else None
-        return self.insertar_proyecto(titulo=titulo, enlace=enlace, descripcion=descripcion, fecha_hora=fecha_hora)
+        return self.insertar_proyecto(title=title, url=url, description=description, posted_at=posted_at)
 
     def update_by_id(
         self,
     proyecto_id: int,
-        titulo: Optional[str] = None,
-        enlace: Optional[str] = None,
-        descripcion: Optional[str] = None,
-        fecha_hora: Optional[datetime] = None,
+        title: Optional[str] = None,
+        url: Optional[str] = None,
+        description: Optional[str] = None,
+        posted_at: Optional[datetime] = None,
     ) -> bool:
         """
         Updates provided fields only.
         """
         sets = []
         params: List[Any] = []
-        if fecha_hora is not None:
-            sets.append("fecha_hora = %s"); params.append(fecha_hora)
-        if titulo is not None:
-            sets.append("titulo = %s"); params.append(titulo)
-        if descripcion is not None:
-            sets.append("descripcion = %s"); params.append(descripcion)
-        if enlace is not None:
-            sets.append("enlace = %s"); params.append(enlace)
+        if posted_at is not None:
+            sets.append("posted_at = %s"); params.append(posted_at)
+        if title is not None:
+            sets.append("title = %s"); params.append(title)
+        if description is not None:
+            sets.append("description = %s"); params.append(description)
+        if url is not None:
+            sets.append("url = %s"); params.append(url)
 
         if not sets:
             return True  # nothing to update, consider success
 
-        sql = f"UPDATE proyectos SET {', '.join(sets)} WHERE id = %s"
+        sql = f"UPDATE projects SET {', '.join(sets)} WHERE id = %s"
         params.append(proyecto_id)
         return self._db.execute_non_query(sql, tuple(params))
 
@@ -201,13 +229,13 @@ class proyectosDatabase:
         """
         Hard delete (removes the row).
         """
-        return self._db.execute_non_query("DELETE FROM proyectos WHERE id = %s", (proyecto_id,))
+        return self._db.execute_non_query("DELETE FROM projects WHERE id = %s", (proyecto_id,))
 
     def get_recent(self, limit: int = 50) -> List[Dict[str, Any]]:
         sql = """
-        SELECT id, user_id, fecha_hora, titulo, descripcion, enlace
-        FROM proyectos
-        ORDER BY (fecha_hora IS NULL), fecha_hora DESC, id DESC
+        SELECT id, user_id, posted_at, title, description, url
+        FROM projects
+        ORDER BY (posted_at IS NULL), posted_at DESC, id DESC
         LIMIT %s
         """
         rows = self._db.execute_query(sql, (limit,))
@@ -215,9 +243,9 @@ class proyectosDatabase:
 
     def get_by_url(self, url: str) -> Optional[Dict[str, Any]]:
         sql = """
-        SELECT id, user_id, fecha_hora, titulo, descripcion, enlace
-        FROM proyectos
-        WHERE enlace = %s
+        SELECT id, user_id, posted_at, title, description, url
+        FROM projects
+        WHERE url = %s
         ORDER BY id DESC
         LIMIT 1
         """
@@ -239,14 +267,14 @@ class proyectosDatabase:
         for skill in normalized:
             variants = {skill, skill.replace("-", " ")}
             for variant in variants:
-                clauses.append("LOWER(CONCAT_WS(' ', titulo, descripcion)) LIKE %s")
+                clauses.append("LOWER(CONCAT_WS(' ', title, description)) LIKE %s")
                 params.append(f"%{variant}%")
 
         sql = f"""
-        SELECT id, user_id, fecha_hora, titulo, descripcion, enlace
-        FROM proyectos
+        SELECT id, user_id, posted_at, title, description, url
+        FROM projects
         WHERE {' OR '.join(clauses)}
-        ORDER BY (fecha_hora IS NULL), fecha_hora DESC, id DESC
+        ORDER BY (posted_at IS NULL), posted_at DESC, id DESC
         LIMIT %s
         """
         params.append(limit)
@@ -256,15 +284,15 @@ class proyectosDatabase:
     def bulk_insert(self, items: List[Dict[str, Any]]) -> int:
         count = 0
         for it in items:
-            titulo = it.get("titulo") or it.get("title")
-            enlace = it.get("enlace") or it.get("url")
-            if not titulo or not enlace:
+            title = it.get("title") or it.get("titulo")
+            url = it.get("url") or it.get("enlace")
+            if not title or not url:
                 continue
             if self.insertar_proyecto(
-                titulo=titulo,
-                enlace=enlace,
-                descripcion=it.get("descripcion") or it.get("description"),
-                fecha_hora=it.get("fecha_hora") or it.get("posted_at"),
+                title=title,
+                url=url,
+                description=it.get("description") or it.get("descripcion"),
+                posted_at=it.get("posted_at") or it.get("fecha_hora"),
             ):
                 count += 1
         return count
@@ -297,7 +325,7 @@ class proyectosDatabase:
 
 # Main de prueba (con inserción, lectura, actualización, listado y borrado físico)
 if __name__ == "__main__":
-    print("=== Testing proyectosDatabase (original schema) ===")
+    print("=== Testing proyectosDatabase (English schema) ===")
     try:
         db = proyectosDatabase()
         print("Instance created and schema ensured.")
@@ -306,25 +334,25 @@ if __name__ == "__main__":
         recent = db.get_recent(limit=1)
         print(f"Connection test: {len(recent)} record(s) fetched.")
 
-        # 2) Upsert test (insert or update last by enlace)
-        test_url = "https://www.workana.com/job/test-proyecto-original"
+        # 2) Upsert test (insert or update last by url)
+        test_url = "https://www.workana.com/job/test-project-original"
         pid = db.upsert_by_url(
-            titulo="Proyecto de prueba (original)",
-            enlace=test_url,
-            descripcion="Insertado por main() para prueba.",
-            fecha_hora=datetime.now(),
+            title="Proyecto de prueba (original)",
+            url=test_url,
+            description="Insertado por main() para prueba.",
+            posted_at=datetime.now(),
         )
         print(f"Upsert ID: {pid}")
 
         # 3) Update test
         if pid:
-            ok = db.update_by_id(pid, titulo="Proyecto de prueba (original) - actualizado")
+            ok = db.update_by_id(pid, title="Proyecto de prueba (original) - actualizado")
             print(f"Update by id: {'OK' if ok else 'FAIL'}")
 
         # 4) Show recent
-        print("\nRecent proyectos:")
+        print("\nRecent projects:")
         for p in db.get_recent(limit=5):
-            print(f" - [{p['id']}] {p['titulo']} | {p['enlace']} | fecha_hora={p['fecha_hora']}")
+            print(f" - [{p['id']}] {p['title']} | {p['url']} | posted_at={p['posted_at']}")
 
         # 5) Hard delete test
         if pid:

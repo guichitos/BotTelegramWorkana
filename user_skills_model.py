@@ -16,9 +16,9 @@ class UserSkills:
         self._load_user_db_id()
 
     def _load_user_db_id(self) -> None:
-        """Cache the usuarios_bot.id linked to the telegram user (if any)."""
+        """Cache the bot_users.id linked to the telegram user (if any)."""
         result = self._db.execute_query(
-            "SELECT id FROM usuarios_bot WHERE telegram_user_id = ? LIMIT 1",
+            "SELECT id FROM bot_users WHERE telegram_user_id = ? LIMIT 1",
             (self.UserID,),
         )
         if result:
@@ -100,7 +100,7 @@ class UserSkills:
         Query = (
             "SELECT u.telegram_user_id, us.skill_slug "
             "FROM user_skills us "
-            "JOIN usuarios_bot u ON us.user_id = u.id "
+            "JOIN bot_users u ON us.user_id = u.id "
             "ORDER BY u.telegram_user_id"
         )
         return Database.execute_query(Query)
