@@ -26,6 +26,12 @@ def load_intervals(config_path: str | None = None) -> Dict[str, int]:
             "user_skill_scan_minutes": DEFAULT_INTERVAL_MINUTES,
         }
 
+    if "general_scraper_enabled" in data:
+        print(
+            "[CONFIG] 'general_scraper_enabled' en config_intervals.json ya no se usa; "
+            "el scraper general se controla solo con la variable en BD."
+        )
+
     return {
         "scrape_all_minutes": int(data.get("scrape_all_minutes", DEFAULT_INTERVAL_MINUTES)),
         "user_skill_scan_minutes": int(data.get("user_skill_scan_minutes", DEFAULT_INTERVAL_MINUTES)),

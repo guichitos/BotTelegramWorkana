@@ -15,7 +15,11 @@ from run_scraper_and_store import Run as RunScraper
 from telegram_flag_manager import gestionar_desde_telegram
 from user_skills_model import UserSkills
 from workana_bot_database_model import WorkanaBotDatabase
-from workana_flag_manager import debe_ejecutarse
+from workana_flag_manager import (
+    debe_ejecutarse,
+    debe_scrapear_general,
+    tiene_conexion_config,
+)
 
 
 def VerifyConnection(db: proyectosDatabase) -> None:
@@ -61,7 +65,10 @@ def run_user_skill_scan(project_db: proyectosDatabase) -> None:
         print(f"[SKILLS] Usuario {user_id}: {len(matches)} coincidencias en la BD.")
 
 
-def schedule_loop(interval_scrape: int, interval_skill_scan: int) -> None:
+def schedule_loop(
+    interval_scrape: int,
+    interval_skill_scan: int,
+) -> None:
     """Main scheduler loop to run tasks every configured minutes."""
     project_db = proyectosDatabase()
     VerifyConnection(project_db)
@@ -75,11 +82,21 @@ def schedule_loop(interval_scrape: int, interval_skill_scan: int) -> None:
             ran_task = False
 
             if now >= next_scrape:
-                try:
-                    inserted = scrape_all_projects()
-                    print(f"[SCRAPER] Insertados/actualizados: {inserted}")
-                except Exception as ex:
-                    print(f"[SCRAPER] Error: {ex}")
+                run_scraper = debe_scrapear_general()
+
+                if run_scraper:
+                    try:
+                        inserted = scrape_all_projects()
+                        print(f"[SCRAPER] Insertados/actualizados: {inserted}")
+                    except Exception as ex:
+                        print(f"[SCRAPER] Error: {ex}")
+                else:
+                    reason = "por variable remota"
+                    if not tiene_conexion_config():
+                        reason = "por falta de conexión con la base de variables"
+                    print(
+                        f"[SCRAPER] Scraper general desactivado {reason}; se omite esta ejecución."
+                    )
                 next_scrape = now + timedelta(minutes=interval_scrape)
                 ran_task = True
 
