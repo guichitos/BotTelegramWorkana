@@ -133,6 +133,7 @@ def main():
     schedule_loop(
         interval_scrape=intervals.get("scrape_all_minutes", 5),
         interval_skill_scan=intervals.get("user_skill_scan_minutes", 5),
+        local_general_scraper_enabled=intervals.get("general_scraper_enabled", True),
     )
 
 
