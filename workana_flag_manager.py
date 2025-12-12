@@ -9,6 +9,10 @@ config = VariablesApiController(entorno)
 def debe_ejecutarse() -> bool:
     return config.ScriptMustRun
 
+
+def debe_scrapear_general() -> bool:
+    return config.GeneralScraperEnabled
+
 def activar_script() -> bool:
     return config.StartScraping()
 
