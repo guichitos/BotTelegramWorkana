@@ -6,29 +6,21 @@ from local_o_vps import entorno
 
 config = VariablesApiController(entorno)
 
+
 def debe_ejecutarse() -> bool:
     return config.ScriptMustRun
 
 
-def debe_scrapear_general(
-    default_if_unreachable: bool | None = None,
-    allow_local_override: bool = False,
-) -> bool:
+def debe_scrapear_general(default_if_unreachable: bool | None = None) -> bool:
     """
-    Indicate whether the general scraper should run.
+    Indicate whether the general scraper should run based on the variables DB.
 
-    If the variables DB is reachable, return the remote flag. Otherwise, fall
-    back to ``default_if_unreachable`` when provided so local config can drive
-    the decision instead of silently disabling the scraper.
+    If the variables DB is unreachable and a default is provided, fall back to
+    that value; otherwise, disable the scraper when the remote flag is unknown.
     """
 
     if config.IsConnected:
-        remote_flag = config.GeneralScraperEnabled
-        if remote_flag:
-            return True
-        if allow_local_override and default_if_unreachable:
-            return True
-        return False
+        return config.GeneralScraperEnabled
 
     if default_if_unreachable is not None:
         return default_if_unreachable
@@ -42,17 +34,22 @@ def estado_remoto_scraper() -> bool | None:
         return None
     return config.GeneralScraperEnabled
 
+
 def activar_script() -> bool:
     return config.StartScraping()
+
 
 def desactivar_script() -> bool:
     return config.StopScraping()
 
+
 def tiene_conexion_config() -> bool:
     return config.IsConnected
 
+
 def obtener_codigo_error_conexion() -> str:
     return config.ConnectionErrorCode or "VAR-DB-CONN-001"
+
 
 if __name__ == "__main__":
     estado_actual = debe_ejecutarse()
