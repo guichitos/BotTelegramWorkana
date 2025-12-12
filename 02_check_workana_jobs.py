@@ -18,6 +18,7 @@ from workana_bot_database_model import WorkanaBotDatabase
 from workana_flag_manager import (
     debe_ejecutarse,
     debe_scrapear_general,
+    estado_remoto_scraper,
     tiene_conexion_config,
 )
 
@@ -85,17 +86,30 @@ def schedule_loop(
             if now >= next_scrape:
                 if not local_general_scraper_enabled:
                     print("[SCRAPER] Scraper general desactivado por configuración local.")
-                elif debe_scrapear_general(default_if_unreachable=local_general_scraper_enabled):
-                    try:
-                        inserted = scrape_all_projects()
-                        print(f"[SCRAPER] Insertados/actualizados: {inserted}")
-                    except Exception as ex:
-                        print(f"[SCRAPER] Error: {ex}")
                 else:
-                    reason = "por variable remota"
-                    if not tiene_conexion_config():
-                        reason = "por falta de conexión con la base de variables"
-                    print(f"[SCRAPER] Scraper general desactivado {reason}; se omite esta ejecución.")
+                    run_scraper = debe_scrapear_general(
+                        default_if_unreachable=local_general_scraper_enabled,
+                        allow_local_override=True,
+                    )
+
+                    if run_scraper:
+                        if estado_remoto_scraper() is False:
+                            print(
+                                "[SCRAPER] Ejecución forzada por configuración local "
+                                "(variable remota desactivada)."
+                            )
+                        try:
+                            inserted = scrape_all_projects()
+                            print(f"[SCRAPER] Insertados/actualizados: {inserted}")
+                        except Exception as ex:
+                            print(f"[SCRAPER] Error: {ex}")
+                    else:
+                        reason = "por variable remota"
+                        if not tiene_conexion_config():
+                            reason = "por falta de conexión con la base de variables"
+                        print(
+                            f"[SCRAPER] Scraper general desactivado {reason}; se omite esta ejecución."
+                        )
                 next_scrape = now + timedelta(minutes=interval_scrape)
                 ran_task = True
 
