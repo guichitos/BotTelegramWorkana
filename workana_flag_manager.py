@@ -10,29 +10,13 @@ def debe_ejecutarse() -> bool:
     return config.ScriptMustRun
 
 
-def debe_scrapear_general(
-    default_if_unreachable: bool | None = None,
-    allow_local_override: bool = False,
-) -> bool:
-    """
-    Indicate whether the general scraper should run.
+def debe_scrapear_general() -> bool:
+    """Indica si debe ejecutarse el scraper general según la variable remota."""
 
-    If the variables DB is reachable, return the remote flag. Otherwise, fall
-    back to ``default_if_unreachable`` when provided so local config can drive
-    the decision instead of silently disabling the scraper.
-    """
-
-    if config.IsConnected:
-        remote_flag = config.GeneralScraperEnabled
-        if remote_flag:
-            return True
-        if allow_local_override and default_if_unreachable:
-            return True
+    if not config.IsConnected:
         return False
 
-    if default_if_unreachable is not None:
-        return default_if_unreachable
-    return False
+    return config.GeneralScraperEnabled
 
 
 def estado_remoto_scraper() -> bool | None:
