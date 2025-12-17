@@ -18,7 +18,6 @@ from workana_bot_database_model import WorkanaBotDatabase
 from workana_flag_manager import (
     debe_ejecutarse,
     debe_scrapear_general,
-    estado_remoto_scraper,
     tiene_conexion_config,
 )
 
@@ -69,7 +68,6 @@ def run_user_skill_scan(project_db: proyectosDatabase) -> None:
 def schedule_loop(
     interval_scrape: int,
     interval_skill_scan: int,
-    local_general_scraper_enabled: bool,
 ) -> None:
     """Main scheduler loop to run tasks every configured minutes."""
     project_db = proyectosDatabase()
@@ -84,32 +82,21 @@ def schedule_loop(
             ran_task = False
 
             if now >= next_scrape:
-                if not local_general_scraper_enabled:
-                    print("[SCRAPER] Scraper general desactivado por configuración local.")
-                else:
-                    run_scraper = debe_scrapear_general(
-                        default_if_unreachable=local_general_scraper_enabled,
-                        allow_local_override=True,
-                    )
+                run_scraper = debe_scrapear_general()
 
-                    if run_scraper:
-                        if estado_remoto_scraper() is False:
-                            print(
-                                "[SCRAPER] Ejecución forzada por configuración local "
-                                "(variable remota desactivada)."
-                            )
-                        try:
-                            inserted = scrape_all_projects()
-                            print(f"[SCRAPER] Insertados/actualizados: {inserted}")
-                        except Exception as ex:
-                            print(f"[SCRAPER] Error: {ex}")
-                    else:
-                        reason = "por variable remota"
-                        if not tiene_conexion_config():
-                            reason = "por falta de conexión con la base de variables"
-                        print(
-                            f"[SCRAPER] Scraper general desactivado {reason}; se omite esta ejecución."
-                        )
+                if run_scraper:
+                    try:
+                        inserted = scrape_all_projects()
+                        print(f"[SCRAPER] Insertados/actualizados: {inserted}")
+                    except Exception as ex:
+                        print(f"[SCRAPER] Error: {ex}")
+                else:
+                    reason = "por variable remota"
+                    if not tiene_conexion_config():
+                        reason = "por falta de conexión con la base de variables"
+                    print(
+                        f"[SCRAPER] Scraper general desactivado {reason}; se omite esta ejecución."
+                    )
                 next_scrape = now + timedelta(minutes=interval_scrape)
                 ran_task = True
 
@@ -146,7 +133,6 @@ def main():
     schedule_loop(
         interval_scrape=intervals.get("scrape_all_minutes", 5),
         interval_skill_scan=intervals.get("user_skill_scan_minutes", 5),
-        local_general_scraper_enabled=intervals.get("general_scraper_enabled", True),
     )
 
 
