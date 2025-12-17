@@ -1,5 +1,4 @@
 {
   "scrape_all_minutes": 5,
-  "user_skill_scan_minutes": 5,
-  "general_scraper_enabled": true
+  "user_skill_scan_minutes": 5
 }
