@@ -52,7 +52,7 @@ class VariablesApiController:
             print(f"⚠️ No se pudo conectar a la base de datos de variables: {e}")
             return None
 
-    def _get_boolean_variable(self, name: str) -> bool:
+    def _get_boolean_variable(self, name: str, *, default_if_missing: bool = False) -> bool:
         try:
             if not self._connection:
                 return False
@@ -62,9 +62,12 @@ class VariablesApiController:
             if result:
                 return str(result[0]).strip().lower() in ["1", "true", "t", "yes"]
             print(
-                f"⚠️ La variable '{name}' no existe en la base de variables; se asume False."
+                "⚠️ La variable '{name}' no existe en la base de variables; se asume {value}.".format(
+                    name=name,
+                    value="True" if default_if_missing else "False",
+                )
             )
-            return False
+            return default_if_missing
         except mariadb.Error as e:
             print(f"❌ Error al consultar la variable '{name}': {e}")
             return False
@@ -75,7 +78,8 @@ class VariablesApiController:
 
     @property
     def GeneralScraperEnabled(self) -> bool:
-        return self._get_boolean_variable("general_scraper_enabled")
+        # El scraper general comparte el mismo switch que el script principal
+        return self._get_boolean_variable("correr_workana_script")
 
     @property
     def IsConnected(self) -> bool:
@@ -99,10 +103,10 @@ class VariablesApiController:
         return self._update_execution_variable("correr_workana_script", "false")
 
     def EnableGeneralScraper(self) -> bool:
-        return self._update_execution_variable("general_scraper_enabled", "true")
+        return self._update_execution_variable("correr_workana_script", "true")
 
     def DisableGeneralScraper(self) -> bool:
-        return self._update_execution_variable("general_scraper_enabled", "false")
+        return self._update_execution_variable("correr_workana_script", "false")
 
     def _update_execution_variable(self, name: str, value: str) -> bool:
         if not self._connection:
