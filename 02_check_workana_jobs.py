@@ -3,7 +3,7 @@ import os
 import sys
 import time
 from datetime import datetime, timedelta
-from typing import Dict, List
+from typing import Optional
 
 # Ensure local imports resolve
 sys.path.append(os.path.dirname(__file__))
@@ -11,10 +11,9 @@ sys.path.append(os.path.dirname(__file__))
 from config_intervals import load_intervals
 from local_o_vps import entorno
 from projects_db import proyectosDatabase
+from projects_db_manager import ProjectRepository
 from run_scraper_and_store import Run as RunScraper
 from telegram_flag_manager import gestionar_desde_telegram
-from user_skills_model import UserSkills
-from workana_bot_database_model import WorkanaBotDatabase
 from workana_flag_manager import (
     debe_ejecutarse,
     debe_scrapear_general,
@@ -38,31 +37,40 @@ def scrape_all_projects() -> int:
     return RunScraper(url)
 
 
-def get_user_skills_map(db: WorkanaBotDatabase) -> Dict[int, List[str]]:
-    """Return a mapping of user_id -> list of skills (normalized)."""
-    skills_by_user: Dict[int, List[str]] = {}
-    rows = UserSkills.GetAllUsersSkills(db)
-    for user_id, skill_slug in rows:
-        if user_id is None or skill_slug is None:
-            continue
-        normalized = str(skill_slug).strip().lower()
-        if not normalized:
-            continue
-        skills_by_user.setdefault(int(user_id), []).append(normalized)
-    return skills_by_user
+STATE_FILE = "ultima_revision_skills.log"
 
 
-def run_user_skill_scan(project_db: proyectosDatabase) -> None:
-    """Search stored projects for every user's skills (DB-only)."""
-    base_db = WorkanaBotDatabase()
-    skill_map = get_user_skills_map(base_db)
-    if not skill_map:
-        print("[SKILLS] No hay usuarios con skills configuradas.")
+def _load_last_skill_scan() -> Optional[datetime]:
+    if not os.path.exists(STATE_FILE):
+        return None
+    try:
+        with open(STATE_FILE, "r", encoding="utf-8") as f:
+            content = f.read().strip()
+            return datetime.fromisoformat(content) if content else None
+    except Exception:
+        return None
+
+
+def _persist_last_skill_scan(ts: datetime) -> None:
+    try:
+        with open(STATE_FILE, "w", encoding="utf-8") as f:
+            f.write(ts.isoformat())
+    except Exception as ex:
+        print(f"[SKILLS] No se pudo escribir el estado de escaneo: {ex}")
+
+
+def run_user_skill_scan(repo: ProjectRepository) -> None:
+    """Evaluate stored projects against user skills and send Telegram alerts."""
+    last_scan = _load_last_skill_scan()
+    projects = repo.get_projects_for_skill_scan(since=last_scan, limit=200)
+
+    if not projects:
+        print("[SKILLS] No hay proyectos nuevos para revisar.")
+        _persist_last_skill_scan(datetime.now())
         return
 
-    for user_id, skills in skill_map.items():
-        matches = project_db.search_by_skills(skills, limit=200)
-        print(f"[SKILLS] Usuario {user_id}: {len(matches)} coincidencias en la BD.")
+    repo.notify_users_for_projects(projects)
+    _persist_last_skill_scan(datetime.now())
 
 
 def schedule_loop(
@@ -71,6 +79,7 @@ def schedule_loop(
 ) -> None:
     """Main scheduler loop to run tasks every configured minutes."""
     project_db = proyectosDatabase()
+    repo = ProjectRepository()
     VerifyConnection(project_db)
 
     next_scrape = datetime.now()
@@ -102,7 +111,7 @@ def schedule_loop(
 
             if now >= next_skill_scan:
                 try:
-                    run_user_skill_scan(project_db)
+                    run_user_skill_scan(repo)
                 except Exception as ex:
                     print(f"[SKILLS] Error: {ex}")
                 next_skill_scan = now + timedelta(minutes=interval_skill_scan)

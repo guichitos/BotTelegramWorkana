@@ -261,6 +261,65 @@ class proyectosDatabase:
         rows = self._db.execute_query(sql, tuple(params))
         return [self._to_dict_row(r) for r in rows]
 
+    def get_projects_with_skills_since(
+        self, since: Optional[datetime] = None, limit: int = 200
+    ) -> List[Dict[str, Any]]:
+        """
+        Retrieve projects (ordered by posted_at DESC) with their stored skills.
+        Only projects whose posted_at is on/after "since" are included when provided.
+        """
+        params: List[Any] = []
+        where_clause = ""
+        if since is not None:
+            where_clause = "WHERE p.posted_at >= %s"
+            params.append(since)
+
+        sql_projects = f"""
+        SELECT p.id, p.user_id, p.posted_at, p.title, p.description, p.url
+        FROM projects p
+        {where_clause}
+        ORDER BY (p.posted_at IS NULL), p.posted_at DESC, p.id DESC
+        LIMIT %s
+        """
+        params.append(limit)
+
+        project_rows = self._db.execute_query(sql_projects, tuple(params))
+        if not project_rows:
+            return []
+
+        project_ids = [row[0] for row in project_rows]
+        skills_map: Dict[int, List[Dict[str, Any]]] = {pid: [] for pid in project_ids}
+
+        placeholders = ",".join(["%s"] * len(project_ids))
+        sql_skills = f"""
+        SELECT project_id, skill_name, skill_slug, skill_href
+        FROM project_skills
+        WHERE project_id IN ({placeholders})
+        """
+        skill_rows = self._db.execute_query(sql_skills, tuple(project_ids))
+        for pid, name, slug, href in skill_rows:
+            if name:
+                skills_map.setdefault(pid, []).append(
+                    {"name": name, "slug": slug, "href": href}
+                )
+
+        projects: List[Dict[str, Any]] = []
+        for row in project_rows:
+            pid, user_id, posted_at, title, description, url = row
+            projects.append(
+                {
+                    "id": pid,
+                    "user_id": user_id,
+                    "posted_at": posted_at,
+                    "title": title,
+                    "description": description,
+                    "url": url,
+                    "skills": skills_map.get(pid, []),
+                }
+            )
+
+        return projects
+
     def bulk_insert(self, items: List[Dict[str, Any]]) -> int:
         count = 0
         for it in items:
