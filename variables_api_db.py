@@ -61,6 +61,9 @@ class VariablesApiController:
             result = cursor.fetchone()
             if result:
                 return str(result[0]).strip().lower() in ["1", "true", "t", "yes"]
+            print(
+                f"⚠️ La variable '{name}' no existe en la base de variables; se asume False."
+            )
             return False
         except mariadb.Error as e:
             print(f"❌ Error al consultar la variable '{name}': {e}")
