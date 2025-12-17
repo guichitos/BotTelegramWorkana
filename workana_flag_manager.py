@@ -14,7 +14,10 @@ def debe_scrapear_general() -> bool:
     """Indica si debe ejecutarse el scraper general según la variable remota."""
 
     if not config.IsConnected:
-        return False
+        print(
+            "⚠️ No se pudo contactar la base de variables; se asume habilitado el scraper general."
+        )
+        return True
 
     return config.GeneralScraperEnabled
 
