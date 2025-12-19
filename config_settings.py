@@ -1,4 +1,4 @@
-"""Helpers to load scraping intervals from a JSON config file."""
+"""Helpers to load general project configuration from a JSON file."""
 from __future__ import annotations
 
 import json
@@ -6,10 +6,11 @@ import os
 from typing import Dict
 
 DEFAULT_INTERVAL_MINUTES = 5
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config_intervals.json")
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config_settings.json")
 
 
-def load_intervals(config_path: str | None = None) -> Dict[str, int]:
+def load_settings(config_path: str | None = None) -> Dict[str, int]:
+    """Load general configuration values from JSON, falling back to defaults."""
     path = config_path or CONFIG_PATH
     if not os.path.exists(path):
         return {
