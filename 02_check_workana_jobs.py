@@ -8,7 +8,7 @@ from typing import Optional
 # Ensure local imports resolve
 sys.path.append(os.path.dirname(__file__))
 
-from config_intervals import load_intervals
+from config_settings import load_settings
 from local_o_vps import entorno
 from projects_db import proyectosDatabase
 from projects_db_manager import ProjectRepository
@@ -138,7 +138,7 @@ def main():
         print("La variable indica que NO debe ejecutarse el script.")
         return
 
-    intervals = load_intervals()
+    intervals = load_settings()
     schedule_loop(
         interval_scrape=intervals.get("scrape_all_minutes", 5),
         interval_skill_scan=intervals.get("user_skill_scan_minutes", 5),

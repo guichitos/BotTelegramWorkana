@@ -4,6 +4,7 @@ from urllib.parse import quote
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
+from config_settings import load_settings
 from workana_flag_manager import (
     activar_script,
     desactivar_script,
@@ -52,6 +53,24 @@ async def registrar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if BotUser.IsRegistered:
         await update.message.reply_text("Ya estás registrado.")
     else:
+        settings = load_settings()
+        try:
+            max_users = int(settings.get("max_users", 1))
+        except (TypeError, ValueError):
+            max_users = 1
+
+        if max_users <= 0:
+            max_users = 1
+
+        usuarios_activos = User.CountActive(Database)
+        if usuarios_activos >= max_users:
+            await update.message.reply_text(
+                "No hay invitaciones disponibles en este momento. "
+                "Pronto se habilitarán más cupos."
+            )
+            Database.disconnect()
+            return
+
         RegistrationSuccess = BotUser.Register(TelegramUsername)
         if RegistrationSuccess:
             estado = "reactivado" if BotUser.IsActivated else "registrado"
