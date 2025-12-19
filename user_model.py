@@ -93,6 +93,12 @@ class User:
         Query = "SELECT telegram_user_id, username FROM bot_users WHERE active = TRUE"
         return Database.execute_query(Query)
 
+    @staticmethod
+    def CountActive(Database: WorkanaBotDatabase) -> int:
+        Query = "SELECT COUNT(*) FROM bot_users WHERE active = TRUE"
+        result = Database.execute_scalar(Query)
+        return int(result) if result is not None else 0
+
 
 if __name__ == "__main__":
     db = WorkanaBotDatabase()
