@@ -25,5 +25,5 @@ INSTRUCCIONES PARA CORRER EL SISTEMA
 4) Otros apuntes útiles
 -----------------------
 - Si solo quieres lanzar un scraping puntual sin scheduler, usa run_scraper_and_store.py (ajusta la URL de prueba o pásala como argumento dentro del código).
-- El archivo config_intervals.json controla los intervalos en minutos del scheduler (scrape_all_minutes y user_skill_scan_minutes).
+- El archivo config_settings.json controla los intervalos en minutos del scheduler (scrape_all_minutes y user_skill_scan_minutes).
 - Los logs se imprimen en consola; puedes redirigir la salida a un archivo si necesitas auditoría.
