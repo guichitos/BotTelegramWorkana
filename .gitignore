@@ -13,6 +13,7 @@ __pycache__/
 .env
 *.env
 .env.*
+!.env.example
 
 # === Archivos de configuración local (no subir al VPS) ===
 local_o_vps.py
