@@ -10,6 +10,7 @@ BOT_ENV = os.getenv("BOT_ENV", "dev").lower()
 ENV_FILES = {
     "dev": ".env.dev",
     "prod": ".env.prod",
+    "laptop": ".env.laptop",
 }
 
 env_file = ENV_FILES.get(BOT_ENV, ENV_FILES["dev"])
