@@ -38,6 +38,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 async def registrar(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    message = update.effective_message
+    if message is None:
+        return
+
     TelegramUserID = update.effective_user.id
     TelegramUsername = update.effective_user.username or "sin_usuario"
 
@@ -45,13 +49,13 @@ async def registrar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     Database.connect()
 
     if not Database.IsConnected:
-        await update.message.reply_text("No es posible conectarse a la base de datos.")
+        await message.reply_text("No es posible conectarse a la base de datos.")
         return
 
     BotUser = User(TelegramUserID, Database)
 
     if BotUser.IsRegistered:
-        await update.message.reply_text("Ya estás registrado.")
+        await message.reply_text("Ya estás registrado.")
     else:
         settings = load_settings()
         try:
@@ -64,7 +68,7 @@ async def registrar(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         usuarios_activos = User.CountActive(Database)
         if usuarios_activos >= max_users:
-            await update.message.reply_text(
+            await message.reply_text(
                 "No hay invitaciones disponibles en este momento. "
                 "Pronto se habilitarán más cupos."
             )
@@ -74,9 +78,9 @@ async def registrar(update: Update, context: ContextTypes.DEFAULT_TYPE):
         RegistrationSuccess = BotUser.Register(TelegramUsername)
         if RegistrationSuccess:
             estado = "reactivado" if BotUser.IsActivated else "registrado"
-            await update.message.reply_text(f"Usuario {estado} correctamente.")
+            await message.reply_text(f"Usuario {estado} correctamente.")
         else:
-            await update.message.reply_text("No fue posible registrar el usuario.")
+            await message.reply_text("No fue posible registrar el usuario.")
 
     Database.disconnect()
 
@@ -513,4 +517,3 @@ def _limpiar_habilidades_confirmado(user_id: int) -> str:
     estado = _formatear_estado_habilidades(SkillsManager)
     Database.disconnect()
     return f"{mensaje}\n\n{estado}"
-
