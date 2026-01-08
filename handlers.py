@@ -7,6 +7,7 @@ from telegram import (
     InlineKeyboardMarkup,
     Message,
     Update,
+    User as TelegramUser,
 )
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
@@ -33,6 +34,13 @@ def _get_callback_message(query: CallbackQuery) -> Message | None:
     message = query.message
     if isinstance(message, Message):
         return message
+    return None
+
+
+def _get_effective_user(update: Update) -> TelegramUser | None:
+    user = update.effective_user
+    if isinstance(user, TelegramUser):
+        return user
     return None
 
 
@@ -79,8 +87,12 @@ async def registrar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if message is None:
         return
 
-    TelegramUserID = update.effective_user.id
-    TelegramUsername = update.effective_user.username or "sin_usuario"
+    user = _get_effective_user(update)
+    if user is None:
+        return
+
+    TelegramUserID = user.id
+    TelegramUsername = user.username or "sin_usuario"
 
     Database = WorkanaBotDatabase()
     Database.connect()
@@ -148,7 +160,11 @@ async def eliminar_cuenta(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if message is None:
         return
 
-    TelegramUserID = update.effective_user.id
+    user = _get_effective_user(update)
+    if user is None:
+        return
+
+    TelegramUserID = user.id
 
     Database = WorkanaBotDatabase()
     Database.connect()
@@ -186,7 +202,11 @@ async def confirmar_eliminar_cuenta(update: Update, context: ContextTypes.DEFAUL
     if message is None:
         return
 
-    TelegramUserID = update.effective_user.id
+    user = _get_effective_user(update)
+    if user is None:
+        return
+
+    TelegramUserID = user.id
     bot_username = update.get_bot().username or ""
 
     mensaje = _eliminar_cuenta_confirmada(TelegramUserID, bot_username)
@@ -322,7 +342,11 @@ async def habilidades(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if message is None:
         return
 
-    TelegramUserID = update.effective_user.id
+    user = _get_effective_user(update)
+    if user is None:
+        return
+
+    TelegramUserID = user.id
 
     Database = WorkanaBotDatabase()
     Database.connect()
@@ -343,8 +367,13 @@ async def agregar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if message is None:
         return
 
-    TelegramUserID = update.effective_user.id
-    skill = " ".join(context.args).strip()
+    user = _get_effective_user(update)
+    if user is None:
+        return
+
+    TelegramUserID = user.id
+    args = context.args or []
+    skill = " ".join(args).strip()
 
     if not skill:
         await message.reply_text(
@@ -388,8 +417,13 @@ async def eliminar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if message is None:
         return
 
-    TelegramUserID = update.effective_user.id
-    skill = " ".join(context.args).strip()
+    user = _get_effective_user(update)
+    if user is None:
+        return
+
+    TelegramUserID = user.id
+    args = context.args or []
+    skill = " ".join(args).strip()
 
     Database = WorkanaBotDatabase()
     Database.connect()
@@ -458,7 +492,11 @@ async def limpiar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if message is None:
         return
 
-    TelegramUserID = update.effective_user.id
+    user = _get_effective_user(update)
+    if user is None:
+        return
+
+    TelegramUserID = user.id
 
     Database = WorkanaBotDatabase()
     Database.connect()
@@ -494,8 +532,13 @@ async def confirmar_eliminar(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if message is None:
         return
 
-    TelegramUserID = update.effective_user.id
-    skill = " ".join(context.args).strip()
+    user = _get_effective_user(update)
+    if user is None:
+        return
+
+    TelegramUserID = user.id
+    args = context.args or []
+    skill = " ".join(args).strip()
 
     if not skill:
         await message.reply_text(
@@ -513,7 +556,11 @@ async def confirmar_limpiar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if message is None:
         return
 
-    TelegramUserID = update.effective_user.id
+    user = _get_effective_user(update)
+    if user is None:
+        return
+
+    TelegramUserID = user.id
     mensaje = _limpiar_habilidades_confirmado(TelegramUserID)
     await message.reply_text(mensaje)
 
