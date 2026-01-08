@@ -62,6 +62,7 @@ CREATE TABLE `usuarios_bot` (
   `id` int(11) NOT NULL,
   `telegram_user_id` bigint(20) NOT NULL,
   `nombre_usuario` varchar(255) NOT NULL,
+  `role` varchar(20) NOT NULL DEFAULT 'user',
   `activo` tinyint(1) DEFAULT 1,
   `creado_en` datetime NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()

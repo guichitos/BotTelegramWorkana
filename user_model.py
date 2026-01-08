@@ -4,18 +4,20 @@ class User:
     def __init__(self, UserID: int, Database: WorkanaBotDatabase):
         self.UserID = UserID
         self.Username = None
+        self.Role = "user"
         self._IsRegistered = False
         self._IsActivated = False
         self._db = Database
         self._LoadUserData()
 
     def _LoadUserData(self):
-        Query = "SELECT username, active FROM bot_users WHERE telegram_user_id = ?"
+        Query = "SELECT username, active, role FROM bot_users WHERE telegram_user_id = ?"
         Result = self._db.execute_query(Query, (self.UserID,))
         if Result:
             self.Username = Result[0][0]
             self._IsRegistered = True
             self._IsActivated = bool(Result[0][1])
+            self.Role = Result[0][2] or "user"
 
     @property
     def IsRegistered(self) -> bool:
@@ -24,6 +26,10 @@ class User:
     @property
     def IsActivated(self) -> bool:
         return self._IsActivated
+
+    @property
+    def IsAdmin(self) -> bool:
+        return self.Role == "admin"
 
     def Register(self, Username: str) -> bool:
         if self.IsRegistered:
