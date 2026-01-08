@@ -1,7 +1,7 @@
 import html
 from urllib.parse import quote
 
-from telegram import Message, Update
+from telegram import CallbackQuery, Message, Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 from config_settings import load_settings
@@ -18,6 +18,13 @@ from user_skills_model import UserSkills
 
 def _get_message(update: Update) -> Message | None:
     message = update.effective_message
+    if isinstance(message, Message):
+        return message
+    return None
+
+
+def _get_callback_message(query: CallbackQuery) -> Message | None:
+    message = query.message
     if isinstance(message, Message):
         return message
     return None
@@ -213,6 +220,9 @@ async def comandos_invalidos(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def manejar_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
+    if query is None:
+        return
+    message = _get_callback_message(query)
     data = query.data or ""
     TelegramUserID = query.from_user.id
 
@@ -226,7 +236,9 @@ async def manejar_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"elim_confirm:{skill_slug}", "elim_cancel", "Sí, eliminar", "Cancelar"
         )
         await query.answer()
-        await query.message.reply_text(
+        if message is None:
+            return
+        await message.reply_text(
             f"¿Confirmás eliminar la habilidad: {skill_slug}?", reply_markup=teclado
         )
         return
@@ -235,7 +247,9 @@ async def manejar_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         skill_slug = data.split(":", 1)[1]
         mensaje = _eliminar_habilidad_confirmada(TelegramUserID, skill_slug)
         await query.answer()
-        await query.message.reply_text(mensaje)
+        if message is None:
+            return
+        await message.reply_text(mensaje)
         return
 
     if data == "elim_cancel":
@@ -243,19 +257,25 @@ async def manejar_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         Database = WorkanaBotDatabase()
         Database.connect()
         if not Database.IsConnected:
-            await query.message.reply_text("No es posible conectarse a la base de datos.")
+            if message is None:
+                return
+            await message.reply_text("No es posible conectarse a la base de datos.")
             Database.disconnect()
             return
         SkillsManager = UserSkills(TelegramUserID, Database)
         estado = _formatear_estado_habilidades(SkillsManager)
         Database.disconnect()
-        await query.message.reply_text(f"Cancelaste la eliminación.\n\n{estado}")
+        if message is None:
+            return
+        await message.reply_text(f"Cancelaste la eliminación.\n\n{estado}")
         return
 
     if data == "limpiar_confirm":
         mensaje = _limpiar_habilidades_confirmado(TelegramUserID)
         await query.answer()
-        await query.message.reply_text(mensaje)
+        if message is None:
+            return
+        await message.reply_text(mensaje)
         return
 
     if data == "limpiar_cancel":
@@ -263,13 +283,17 @@ async def manejar_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         Database = WorkanaBotDatabase()
         Database.connect()
         if not Database.IsConnected:
-            await query.message.reply_text("No es posible conectarse a la base de datos.")
+            if message is None:
+                return
+            await message.reply_text("No es posible conectarse a la base de datos.")
             Database.disconnect()
             return
         SkillsManager = UserSkills(TelegramUserID, Database)
         estado = _formatear_estado_habilidades(SkillsManager)
         Database.disconnect()
-        await query.message.reply_text(f"Cancelaste la limpieza.\n\n{estado}")
+        if message is None:
+            return
+        await message.reply_text(f"Cancelaste la limpieza.\n\n{estado}")
         return
 
     await query.answer()
