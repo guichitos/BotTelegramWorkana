@@ -1,7 +1,13 @@
 import html
 from urllib.parse import quote
 
-from telegram import CallbackQuery, Message, Update
+from telegram import (
+    CallbackQuery,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    Message,
+    Update,
+)
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 from config_settings import load_settings
@@ -28,6 +34,19 @@ def _get_callback_message(query: CallbackQuery) -> Message | None:
     if isinstance(message, Message):
         return message
     return None
+
+
+def _build_confirm_keyboard(
+    confirm_callback: str,
+    cancel_callback: str,
+    confirm_label: str,
+    cancel_label: str,
+) -> InlineKeyboardMarkup:
+    keyboard = [
+        [InlineKeyboardButton(confirm_label, callback_data=confirm_callback)],
+        [InlineKeyboardButton(cancel_label, callback_data=cancel_callback)],
+    ]
+    return InlineKeyboardMarkup(keyboard)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
