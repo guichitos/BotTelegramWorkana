@@ -372,7 +372,8 @@ async def agregar(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     TelegramUserID = user.id
-    skill = " ".join(context.args).strip()
+    args = context.args or []
+    skill = " ".join(args).strip()
 
     if not skill:
         await message.reply_text(
@@ -421,7 +422,8 @@ async def eliminar(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     TelegramUserID = user.id
-    skill = " ".join(context.args).strip()
+    args = context.args or []
+    skill = " ".join(args).strip()
 
     Database = WorkanaBotDatabase()
     Database.connect()
@@ -535,7 +537,8 @@ async def confirmar_eliminar(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return
 
     TelegramUserID = user.id
-    skill = " ".join(context.args).strip()
+    args = context.args or []
+    skill = " ".join(args).strip()
 
     if not skill:
         await message.reply_text(
