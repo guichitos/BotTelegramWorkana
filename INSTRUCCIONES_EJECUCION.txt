@@ -4,6 +4,13 @@ INSTRUCCIONES PARA CORRER EL SISTEMA
 1) Preparación del entorno
 --------------------------
 - Usa Python 3.10+.
+- (Opcional pero recomendado) Crea y activa un entorno virtual (venv):
+  Windows (PowerShell):
+    python -m venv venv
+    .\venv\Scripts\Activate.ps1
+  Linux/Mac:
+    python3 -m venv venv
+    source venv/bin/activate
 - Instala las dependencias principales:
   pip install python-telegram-bot==20.* mariadb selenium requests beautifulsoup4 python-dotenv
 - Asegúrate de tener instalado GeckoDriver/Firefox (Selenium) y que esté en el PATH.
