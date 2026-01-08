@@ -1,7 +1,7 @@
 import html
 from urllib.parse import quote
 
-from telegram import Update
+from telegram import Message, Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 from config_settings import load_settings
@@ -16,8 +16,15 @@ from user_model import User
 from user_skills_model import UserSkills
 
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def _get_message(update: Update) -> Message | None:
     message = update.effective_message
+    if isinstance(message, Message):
+        return message
+    return None
+
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    message = _get_message(update)
     if message is None:
         return
 
@@ -42,7 +49,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 async def registrar(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.effective_message
+    message = _get_message(update)
     if message is None:
         return
 
@@ -89,7 +96,7 @@ async def registrar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     Database.disconnect()
 
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.effective_message
+    message = _get_message(update)
     if message is None:
         return
 
@@ -111,7 +118,7 @@ async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 async def eliminar_cuenta(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.effective_message
+    message = _get_message(update)
     if message is None:
         return
 
@@ -149,7 +156,7 @@ async def eliminar_cuenta(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def confirmar_eliminar_cuenta(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.effective_message
+    message = _get_message(update)
     if message is None:
         return
 
@@ -164,7 +171,7 @@ async def confirmar_eliminar_cuenta(update: Update, context: ContextTypes.DEFAUL
     )
 
 async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.effective_message
+    message = _get_message(update)
     if message is None:
         return
 
@@ -181,7 +188,7 @@ async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await message.reply_text(mensaje)
 
 async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.effective_message
+    message = _get_message(update)
     if message is None:
         return
 
@@ -197,7 +204,7 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await message.reply_text(mensaje)
 
 async def comandos_invalidos(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.effective_message
+    message = _get_message(update)
     if message is None:
         return
 
@@ -268,7 +275,7 @@ async def manejar_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
 async def habilidades(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.effective_message
+    message = _get_message(update)
     if message is None:
         return
 
@@ -289,7 +296,7 @@ async def habilidades(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def agregar(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.effective_message
+    message = _get_message(update)
     if message is None:
         return
 
@@ -334,7 +341,7 @@ async def agregar(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def eliminar(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.effective_message
+    message = _get_message(update)
     if message is None:
         return
 
@@ -404,7 +411,7 @@ async def eliminar(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def limpiar(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.effective_message
+    message = _get_message(update)
     if message is None:
         return
 
@@ -440,7 +447,7 @@ async def limpiar(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def confirmar_eliminar(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.effective_message
+    message = _get_message(update)
     if message is None:
         return
 
@@ -459,7 +466,7 @@ async def confirmar_eliminar(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 
 async def confirmar_limpiar(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.effective_message
+    message = _get_message(update)
     if message is None:
         return
 
