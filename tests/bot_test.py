@@ -2,6 +2,7 @@
 import asyncio
 from typing import cast
 
+from telegram import Update
 from telegram.ext import ContextTypes
 
 from handlers import start, registrar, stop, ayuda, menu
@@ -23,11 +24,12 @@ async def test_basico():
         pass
 
     context = cast(ContextTypes.DEFAULT_TYPE, FakeContext())
-    await start(FakeUpdate(), context)
-    await registrar(FakeUpdate(), context)
-    await stop(FakeUpdate(), context)
-    await ayuda(FakeUpdate(), context)
-    await menu(FakeUpdate(), context)
+    update = cast(Update, FakeUpdate())
+    await start(update, context)
+    await registrar(update, context)
+    await stop(update, context)
+    await ayuda(update, context)
+    await menu(update, context)
 
 if __name__ == "__main__":
     asyncio.run(test_basico())

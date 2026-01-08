@@ -2,6 +2,7 @@
 import asyncio
 from typing import cast
 
+from telegram import Update
 from telegram.ext import ContextTypes
 
 from handlers import start, registrar, stop, ayuda, menu
@@ -22,7 +23,7 @@ class FakeContext:
     pass
 
 async def test_all():
-    update = FakeUpdate()
+    update = cast(Update, FakeUpdate())
     context = cast(ContextTypes.DEFAULT_TYPE, FakeContext())
     for label, func in [
         ("start", start),
