@@ -1,5 +1,9 @@
 # bot_test.py
 import asyncio
+from typing import cast
+
+from telegram.ext import ContextTypes
+
 from handlers import start, registrar, stop, ayuda, menu
 
 async def test_basico():
@@ -18,11 +22,12 @@ async def test_basico():
     class FakeContext:
         pass
 
-    await start(FakeUpdate(), FakeContext())
-    await registrar(FakeUpdate(), FakeContext())
-    await stop(FakeUpdate(), FakeContext())
-    await ayuda(FakeUpdate(), FakeContext())
-    await menu(FakeUpdate(), FakeContext())
+    context = cast(ContextTypes.DEFAULT_TYPE, FakeContext())
+    await start(FakeUpdate(), context)
+    await registrar(FakeUpdate(), context)
+    await stop(FakeUpdate(), context)
+    await ayuda(FakeUpdate(), context)
+    await menu(FakeUpdate(), context)
 
 if __name__ == "__main__":
     asyncio.run(test_basico())
