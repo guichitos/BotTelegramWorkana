@@ -26,6 +26,10 @@ demo_*.py
 ui_demo_bot.py
 inline_only_bot.py
 
+# Allow repository tests to be tracked
+!tests/
+!tests/**
+
 # === Archivos sensibles de comunicación ===
 
 

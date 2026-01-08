@@ -1,11 +1,17 @@
 #leer_mensajes.py
+import os
 import requests
+from dotenv import load_dotenv
+from telegram_admin_utils import get_admin_chat_id
 
-TELEGRAM_BOT_TOKEN = '8017150739:AAGb1UzPk9mWdY5GIfCh2pwLi6J1_NY4Kvk'
-TELEGRAM_CHAT_ID = '1341946489'
+load_dotenv()
 
 
 def leer_todos_los_mensajes():
+    TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+    if not TELEGRAM_BOT_TOKEN:
+        print("Error: TELEGRAM_BOT_TOKEN no está configurado.")
+        return []
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getUpdates"
     response = requests.get(url)
     if response.status_code == 200:
@@ -30,9 +36,13 @@ def leer_ultimo_mensaje():
 
 def leer_ultimo_mensaje_usuario():
     mensajes = leer_todos_los_mensajes()
+    admin_chat_id = get_admin_chat_id()
+    if admin_chat_id is None:
+        print("Error: No se encontró usuario admin en bot_users.")
+        return None
     for mensaje in reversed(mensajes):
         chat_id, texto = mensaje
-        if chat_id == int(TELEGRAM_CHAT_ID):  # Asegura que es del usuario
+        if chat_id == int(admin_chat_id):  # Asegura que es del usuario admin
             return mensaje
     return None
 
