@@ -8,6 +8,7 @@ from telegram.ext import ContextTypes
 from handlers import start, registrar, stop, ayuda, menu
 
 async def test_basico():
+    print(">> Ejecutando test_basico...")
     class FakeUser:
         id = 1
         username = "test_user"
@@ -31,6 +32,7 @@ async def test_basico():
     await stop(update, context)
     await ayuda(update, context)
     await menu(update, context)
+    print("✅ test_basico finalizado.")
 
 if __name__ == "__main__":
     asyncio.run(test_basico())

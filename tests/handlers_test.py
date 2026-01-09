@@ -24,6 +24,7 @@ class FakeContext:
     pass
 
 async def test_all():
+    print(">> Ejecutando test_all...")
     update = cast(Update, FakeUpdate())
     context = cast(ContextTypes.DEFAULT_TYPE, FakeContext())
     for label, func in [
@@ -35,6 +36,7 @@ async def test_all():
     ]:
         print(f"\n>> Probando /{label}")
         await func(update, context)
+    print("✅ test_all finalizado.")
 
 if __name__ == "__main__":
     asyncio.run(test_all())
