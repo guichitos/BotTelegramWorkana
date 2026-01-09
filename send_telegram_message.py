@@ -6,13 +6,13 @@ from telegram_admin_utils import get_admin_chat_id
 
 load_dotenv()
 
-def mensaje(titulo_mg, enlace_mg, chat_id=None, matched_skills=None):
+def mensaje(titulo_mg, enlace_mg, chat_id=None, matched_skills=None) -> bool:
     TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
     TELEGRAM_CHAT_ID = chat_id or get_admin_chat_id()
 
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         print("Error: TELEGRAM_BOT_TOKEN no está configurado o no hay admin en bot_users.")
-        return
+        return False
 
     skills_text = ""
     if matched_skills:
@@ -29,8 +29,10 @@ def mensaje(titulo_mg, enlace_mg, chat_id=None, matched_skills=None):
     response = requests.get(url, params=params)
     if response.status_code == 200:
         print(f"Mensaje enviado correctamente a Telegram (chat {TELEGRAM_CHAT_ID}).")
+        return True
     else:
         print(f"Error al enviar mensaje a Telegram (chat {TELEGRAM_CHAT_ID}): {response.text}")
+        return False
 
 
 if __name__ == "__main__":
