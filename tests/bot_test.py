@@ -19,6 +19,7 @@ async def test_basico():
     class FakeUpdate:
         effective_user = FakeUser()
         message = FakeMessage()
+        effective_message = message
 
     class FakeContext:
         pass
