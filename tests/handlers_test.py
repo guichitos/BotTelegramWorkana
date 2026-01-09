@@ -1,5 +1,10 @@
 # handlers_test.py
 import asyncio
+from typing import cast
+
+from telegram import Update
+from telegram.ext import ContextTypes
+
 from handlers import start, registrar, stop, ayuda, menu
 
 class FakeUser:
@@ -13,12 +18,14 @@ class FakeMessage:
 class FakeUpdate:
     effective_user = FakeUser()
     message = FakeMessage()
+    effective_message = message
 
 class FakeContext:
     pass
 
 async def test_all():
-    update, context = FakeUpdate(), FakeContext()
+    update = cast(Update, FakeUpdate())
+    context = cast(ContextTypes.DEFAULT_TYPE, FakeContext())
     for label, func in [
         ("start", start),
         ("registrar", registrar),
