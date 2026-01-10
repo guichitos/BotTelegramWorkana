@@ -1,17 +1,14 @@
 # verify_bot_token.py
-import os
 import asyncio
+import os
 from telegram import Bot
-from dotenv import load_dotenv
-
-# Load .env variables
-load_dotenv()
+import config.env
 
 # Token from environment variables
-TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN") or ""
+TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN") or os.getenv("TELEGRAM_TOKEN") or ""
 
 if not TOKEN:
-    raise ValueError("Missing TELEGRAM_BOT_TOKEN in .env file")
+    raise ValueError("Missing TELEGRAM_BOT_TOKEN or TELEGRAM_TOKEN in .env file")
 
 async def main():
     bot = Bot(token=TOKEN)
