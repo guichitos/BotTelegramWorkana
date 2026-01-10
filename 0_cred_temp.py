@@ -4,6 +4,9 @@ Review and delete this file after confirming all env values are set.
 """
 
 REMOVED_CREDENTIAL_DEFAULTS = {
+    "01_bot": {
+        "telegram_bot_token": "8017150739:AAGb1UzPk9mWdY5GIfCh2pwLi6J1_NY4Kvk",
+    },
     "variables_api_db": {
         "host": "127.0.0.1",
         "port": 3306,
