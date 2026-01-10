@@ -1,10 +1,19 @@
 # config_variables_api_db.py
-import mariadb
 import os
-from dotenv import load_dotenv
+
+import mariadb
+
+import config.env
 from local_o_vps import entorno
 
-load_dotenv()
+def _require_env(name: str, *, allow_empty: bool = False) -> str:
+    value = os.getenv(name)
+    if value is None:
+        raise ValueError(f"Missing required environment variable: {name}")
+    if not allow_empty and value == "":
+        raise ValueError(f"Missing required environment variable: {name}")
+    return value
+
 
 class VariablesApiController:
     def __init__(self, environment: str):
@@ -15,28 +24,17 @@ class VariablesApiController:
         self._connect()
 
     def _get_configuration(self) -> dict:
-        if self._environment == "local":
-            return {
-                "host": os.getenv("LOCAL_DB_HOST", "127.0.0.1"),
-                "port": int(os.getenv("LOCAL_DB_PORT", 3306)),
-                "database": os.getenv("LOCAL_DB_NAME", "variables_api"),
-                "user": os.getenv("LOCAL_DB_USER", "root"),
-                "password": os.getenv("LOCAL_DB_PASS", ""),
-            }
-        if self._environment == "laptop":
-            return {
-                "host": os.getenv("LAPTOP_DB_HOST", "127.0.0.1"),
-                "port": int(os.getenv("LAPTOP_DB_PORT", 3306)),
-                "database": os.getenv("LAPTOP_DB_NAME", "variables_api"),
-                "user": os.getenv("LAPTOP_DB_USER", "root"),
-                "password": os.getenv("LAPTOP_DB_PASS", ""),
-            }
+        host = _require_env("DB_HOST")
+        port = int(_require_env("DB_PORT"))
+        database = _require_env("DB_NAME")
+        user = _require_env("DB_USER")
+        password = _require_env("DB_PASS", allow_empty=True)
         return {
-            "host": os.getenv("VPS_DB_HOST", "127.0.0.1"),
-            "port": int(os.getenv("VPS_DB_PORT", 3306)),
-            "database": os.getenv("VPS_DB_NAME", "admin_variables_api"),
-            "user": os.getenv("VPS_DB_USER", "admin_variables_user"),
-            "password": os.getenv("VPS_DB_PASS", "default-fallback"),
+            "host": host,
+            "port": port,
+            "database": database,
+            "user": user,
+            "password": password,
         }
 
     def _connect(self) -> mariadb.Connection | None:

@@ -1,8 +1,19 @@
 # monitor_workana/config_workana_bot_db.py
 
-import mariadb
 import os
-from local_o_vps import entorno
+
+import mariadb
+
+import config.env
+
+
+def _require_env(name: str, *, allow_empty: bool = False) -> str:
+    value = os.getenv(name)
+    if value is None:
+        raise ValueError(f"Missing required environment variable: {name}")
+    if not allow_empty and value == "":
+        raise ValueError(f"Missing required environment variable: {name}")
+    return value
 
 class WorkanaBotDatabase:
     def __init__(self):
@@ -13,28 +24,17 @@ class WorkanaBotDatabase:
         return self._connection is not None
 
     def _get_connection_config(self) -> dict:
-        if entorno == "local":
-            return {
-                "host": os.getenv("LOCAL_PROJECTS_DB_HOST", "127.0.0.1"),
-                "port": int(os.getenv("LOCAL_PROJECTS_DB_PORT", 3306)),
-                "database": os.getenv("LOCAL_PROJECTS_DB_NAME", "proyectos_workana_db"),
-                "user": os.getenv("LOCAL_PROJECTS_DB_USER", "root"),
-                "password": os.getenv("LOCAL_PROJECTS_DB_PASS", ""),
-            }
-        if entorno == "laptop":
-            return {
-                "host": os.getenv("LAPTOP_PROJECTS_DB_HOST", "127.0.0.1"),
-                "port": int(os.getenv("LAPTOP_PROJECTS_DB_PORT", 3306)),
-                "database": os.getenv("LAPTOP_PROJECTS_DB_NAME", "proyectos_workana_laptop"),
-                "user": os.getenv("LAPTOP_PROJECTS_DB_USER", "root"),
-                "password": os.getenv("LAPTOP_PROJECTS_DB_PASS", ""),
-            }
+        host = _require_env("DB_HOST")
+        port = int(_require_env("DB_PORT"))
+        database = _require_env("DB_NAME")
+        user = _require_env("DB_USER")
+        password = _require_env("DB_PASS", allow_empty=True)
         return {
-            "host": os.getenv("VPS_PROJECTS_DB_HOST", "127.0.0.1"),
-            "port": int(os.getenv("VPS_PROJECTS_DB_PORT", 3306)),
-            "database": os.getenv("VPS_PROJECTS_DB_NAME", "admin_proyectos_workana"),
-            "user": os.getenv("VPS_PROJECTS_DB_USER", "admin_user_proyectos_db"),
-            "password": os.getenv("VPS_PROJECTS_DB_PASS", "passdeuser_proy_DB_25"),
+            "host": host,
+            "port": port,
+            "database": database,
+            "user": user,
+            "password": password,
         }
 
     def connect(self):
