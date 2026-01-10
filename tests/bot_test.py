@@ -27,12 +27,20 @@ async def test_basico():
 
     context = cast(ContextTypes.DEFAULT_TYPE, FakeContext())
     update = cast(Update, FakeUpdate())
-    await start(update, context)
-    await registrar(update, context)
-    await stop(update, context)
-    await ayuda(update, context)
-    await menu(update, context)
-    print("✅ test_basico finalizado.")
+    actions = [
+        ("/start", start),
+        ("/registrar", registrar),
+        ("/stop", stop),
+        ("/ayuda", ayuda),
+        ("/menu", menu),
+    ]
+
+    for command, handler in actions:
+        print(f"Ejecutando {command}...")
+        await handler(update, context)
+        print(f"✅ {command} ejecutado correctamente.")
+
+    print("✅ test_basico finalizado. Comandos verificados: /start, /registrar, /stop, /ayuda, /menu")
 
 if __name__ == "__main__":
     asyncio.run(test_basico())
