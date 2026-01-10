@@ -24,11 +24,11 @@ class WorkanaBotDatabase:
         return self._connection is not None
 
     def _get_connection_config(self) -> dict:
-        host = _require_env("PROJECTS_DB_HOST")
-        port = int(_require_env("PROJECTS_DB_PORT"))
-        database = _require_env("PROJECTS_DB_NAME")
-        user = _require_env("PROJECTS_DB_USER")
-        password = _require_env("PROJECTS_DB_PASS", allow_empty=True)
+        host = _require_env("DB_HOST")
+        port = int(_require_env("DB_PORT"))
+        database = _require_env("DB_NAME")
+        user = _require_env("DB_USER")
+        password = _require_env("DB_PASS", allow_empty=True)
         return {
             "host": host,
             "port": port,

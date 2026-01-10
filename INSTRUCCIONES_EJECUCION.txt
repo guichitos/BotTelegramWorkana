@@ -19,7 +19,7 @@ INSTRUCCIONES PARA CORRER EL SISTEMA
 -----------------------
 - Copia .env.example a .env.dev/.env.laptop/.env.prod según el entorno y ajusta los valores.
 - Define BOT_ENV para que el loader seleccione el archivo correspondiente.
-- Ajusta DB_* y PROJECTS_DB_* para las conexiones de base de datos.
+- Ajusta DB_* para las conexiones de base de datos.
 - Configura TELEGRAM_BOT_TOKEN y el resto de variables necesarias en tu .env.*.
 
 3) Ejecución de los componentes principales

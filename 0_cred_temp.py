@@ -27,5 +27,6 @@ REMOVED_CREDENTIAL_DEFAULTS = {
         "vps_database": "admin_proyectos_workana",
         "vps_user": "admin_user_proyectos_db",
         "vps_password": "passdeuser_proy_DB_25",
+        "note": "WorkanaBotDatabase now reads DB_* keys (same as variables_api_db).",
     },
 }
