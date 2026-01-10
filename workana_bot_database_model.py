@@ -1,6 +1,7 @@
 # monitor_workana/config_workana_bot_db.py
 
 import os
+from typing import Any
 
 import mariadb
 
@@ -50,7 +51,7 @@ class WorkanaBotDatabase:
             self._connection.close()
             self._connection = None
 
-    def execute_scalar(self, sql: str, params: tuple = ()) -> any:
+    def execute_scalar(self, sql: str, params: tuple = ()) -> Any:
         self.connect()
         if not self._connection:
             return None
