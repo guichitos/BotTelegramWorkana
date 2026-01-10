@@ -1,10 +1,9 @@
 #send_telegram_message.py
 import os
 import requests
-from dotenv import load_dotenv
-from telegram_admin_utils import get_admin_chat_id
 
-load_dotenv()
+import config.env
+from telegram_admin_utils import get_admin_chat_id
 
 def mensaje(titulo_mg, enlace_mg, chat_id=None, matched_skills=None) -> bool:
     TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")

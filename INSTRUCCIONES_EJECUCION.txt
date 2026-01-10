@@ -17,9 +17,10 @@ INSTRUCCIONES PARA CORRER EL SISTEMA
 
 2) Configuración básica
 -----------------------
-- Define el entorno en local_o_vps.py ("local", "laptop" o "vps").
-- Ajusta las variables de entorno de base de datos si necesitas valores distintos a los predeterminados (LOCAL_*/LAPTOP_*/VPS_* en workana_bot_database_model.py).
-- Coloca tu token de Telegram en 01_bot.py (constante TOKEN) antes de iniciar el bot.
+- Copia .env.example a .env.dev/.env.laptop/.env.prod según el entorno y ajusta los valores.
+- Define BOT_ENV para que el loader seleccione el archivo correspondiente.
+- Ajusta DB_* y PROJECTS_DB_* para las conexiones de base de datos.
+- Configura TELEGRAM_BOT_TOKEN y el resto de variables necesarias en tu .env.*.
 
 3) Ejecución de los componentes principales
 -------------------------------------------

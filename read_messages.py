@@ -1,10 +1,9 @@
 #leer_mensajes.py
 import os
 import requests
-from dotenv import load_dotenv
-from telegram_admin_utils import get_admin_chat_id
 
-load_dotenv()
+import config.env
+from telegram_admin_utils import get_admin_chat_id
 
 
 def leer_todos_los_mensajes():
