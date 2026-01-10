@@ -1,16 +1,15 @@
 #leer_mensajes.py
 import os
 import requests
-from dotenv import load_dotenv
-from telegram_admin_utils import get_admin_chat_id
 
-load_dotenv()
+import config.env
+from telegram_admin_utils import get_admin_chat_id
 
 
 def leer_todos_los_mensajes():
-    TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+    TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN") or os.getenv("TELEGRAM_TOKEN")
     if not TELEGRAM_BOT_TOKEN:
-        print("Error: TELEGRAM_BOT_TOKEN no está configurado.")
+        print("Error: TELEGRAM_BOT_TOKEN/TELEGRAM_TOKEN no está configurado.")
         return []
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getUpdates"
     response = requests.get(url)

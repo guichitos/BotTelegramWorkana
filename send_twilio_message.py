@@ -1,10 +1,8 @@
 # send_twilio_message.py
 import os
-from dotenv import load_dotenv
-from twilio.rest import Client
 
-# Cargar variables desde .env
-load_dotenv()
+import config.env
+from twilio.rest import Client
 
 def mensaje(titulo_mg, enlace_mg):
     account_sid = os.getenv('TWILIO_ACCOUNT_SID')
