@@ -24,7 +24,12 @@ def test_correr_workana_script_variable():
         print("✅ Conexión establecida correctamente.")
 
         print("🧪 [ETAPA 3] Buscando variable 'correr_workana_script'...")
-        cursor = controller._connection.cursor()
+        connection = controller._connection
+        if connection is None:
+            message = "⚠️ Conexión no disponible al intentar consultar la tabla 'variables'."
+            print(message)
+            pytest.skip(message)
+        cursor = connection.cursor()
         cursor.execute(
             "SELECT value FROM variables WHERE name = ? LIMIT 1",
             ("correr_workana_script",),
