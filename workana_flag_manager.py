@@ -43,7 +43,7 @@ def obtener_codigo_error_conexion() -> str:
 
 if __name__ == "__main__":
     estado_actual = debe_ejecutarse()
-    print(f"🔍 Estado actual de 'correr_workana_script': {estado_actual}")
+    print(f"🔍 Estado actual de 'general_scraper_enabled': {estado_actual}")
 
     respuesta = input("¿Deseas cambiar el estado? (true/false/enter para no cambiar): ").strip().lower()
 
@@ -62,4 +62,4 @@ if __name__ == "__main__":
     else:
         print("⚠️ Entrada inválida. Usa solo 'true', 'false' o presiona enter.")
 
-    print(f"📌 Nuevo estado de 'correr_workana_script': {debe_ejecutarse()}")
+    print(f"📌 Nuevo estado de 'general_scraper_enabled': {debe_ejecutarse()}")
