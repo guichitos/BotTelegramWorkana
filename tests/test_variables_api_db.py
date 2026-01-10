@@ -27,13 +27,25 @@ def test_correr_workana_script_variable():
 
         print("✅ Conexión establecida correctamente.")
 
-        print("🧪 [ETAPA 3] Buscando variable 'correr_workana_script'...")
+        print("🧪 [ETAPA 3] Verificando existencia de tabla 'variables'...")
         connection = controller._connection
         if connection is None:
             message = "⚠️ Conexión no disponible al intentar consultar la tabla 'variables'."
             print(message)
             pytest.skip(message)
         cursor = connection.cursor()
+        cursor.execute(
+            "SELECT COUNT(*) FROM information_schema.tables "
+            "WHERE table_schema = DATABASE() AND table_name = ?",
+            ("variables",),
+        )
+        table_result = cursor.fetchone()
+        table_exists = bool(table_result and table_result[0])
+        print(f"✅ Tabla 'variables' existe: {table_exists}.")
+        if not table_exists:
+            pytest.fail("La tabla 'variables' no existe en la base de datos.")
+
+        print("🧪 [ETAPA 4] Buscando variable 'correr_workana_script'...")
         cursor.execute(
             "SELECT value FROM variables WHERE name = ? LIMIT 1",
             ("correr_workana_script",),
@@ -53,7 +65,7 @@ def test_correr_workana_script_variable():
         print(f"✅ Variable encontrada. Valor crudo: '{raw_value}'.")
         print(f"✅ Valor interpretado (booleano): {parsed_value}.")
 
-        print("🧪 [ETAPA 4] Validando lectura vía controlador...")
+        print("🧪 [ETAPA 5] Validando lectura vía controlador...")
         controller_value = controller.ScriptMustRun
         print(f"✅ Valor devuelto por ScriptMustRun: {controller_value}.")
 
