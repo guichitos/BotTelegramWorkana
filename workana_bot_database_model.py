@@ -7,9 +7,11 @@ import mariadb
 import config.env
 
 
-def _require_env(name: str) -> str:
+def _require_env(name: str, *, allow_empty: bool = False) -> str:
     value = os.getenv(name)
-    if value is None or value == "":
+    if value is None:
+        raise ValueError(f"Missing required environment variable: {name}")
+    if not allow_empty and value == "":
         raise ValueError(f"Missing required environment variable: {name}")
     return value
 
@@ -26,7 +28,7 @@ class WorkanaBotDatabase:
         port = int(_require_env("PROJECTS_DB_PORT"))
         database = _require_env("PROJECTS_DB_NAME")
         user = _require_env("PROJECTS_DB_USER")
-        password = _require_env("PROJECTS_DB_PASS")
+        password = _require_env("PROJECTS_DB_PASS", allow_empty=True)
         return {
             "host": host,
             "port": port,

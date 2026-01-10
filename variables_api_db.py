@@ -6,9 +6,11 @@ import mariadb
 import config.env
 from local_o_vps import entorno
 
-def _require_env(name: str) -> str:
+def _require_env(name: str, *, allow_empty: bool = False) -> str:
     value = os.getenv(name)
-    if value is None or value == "":
+    if value is None:
+        raise ValueError(f"Missing required environment variable: {name}")
+    if not allow_empty and value == "":
         raise ValueError(f"Missing required environment variable: {name}")
     return value
 
@@ -26,7 +28,7 @@ class VariablesApiController:
         port = int(_require_env("DB_PORT"))
         database = _require_env("DB_NAME")
         user = _require_env("DB_USER")
-        password = _require_env("DB_PASS")
+        password = _require_env("DB_PASS", allow_empty=True)
         return {
             "host": host,
             "port": port,
