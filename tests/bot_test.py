@@ -36,7 +36,7 @@ async def test_basico():
     ]
 
     for command, handler in actions:
-        print(f"➡️ Ejecutando {command}...")
+        print(f"Ejecutando {command}...")
         await handler(update, context)
         print(f"✅ {command} ejecutado correctamente.")
 
