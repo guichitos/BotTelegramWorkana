@@ -3,6 +3,10 @@ import unittest
 from workana_bot_database_model import WorkanaBotDatabase
 
 
+# Este test valida que exista un usuario admin en la tabla bot_users.
+# Resultado exitoso esperado: la consulta devuelve al menos un registro y
+# el usuario admin encontrado tiene telegram_user_id definido, username no
+# nulo y no vacío.
 class TestAdminUser(unittest.TestCase):
     def test_admin_user_exists_with_name_and_id(self):
         db = WorkanaBotDatabase()
