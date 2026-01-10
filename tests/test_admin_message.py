@@ -15,10 +15,10 @@ from telegram_admin_utils import get_admin_chat_id
 
 class TestAdminMessage(unittest.TestCase):
     def test_admin_can_receive_message(self):
-        token = os.getenv("TELEGRAM_BOT_TOKEN")
+        token = os.getenv("TELEGRAM_BOT_TOKEN") or os.getenv("TELEGRAM_TOKEN")
         if not token:
             self.skipTest(
-                "TELEGRAM_BOT_TOKEN no está configurado. "
+                "TELEGRAM_BOT_TOKEN/TELEGRAM_TOKEN no está configurado. "
                 "Define la variable de entorno para poder enviar el mensaje."
             )
 

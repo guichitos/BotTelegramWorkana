@@ -20,11 +20,13 @@ from handlers import (
     comandos_invalidos,
 )
 
-TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN") or os.getenv("TELEGRAM_TOKEN", "")
 
 def run_bot():
     if not TOKEN:
-        raise ValueError("Missing TELEGRAM_BOT_TOKEN in environment.")
+        raise ValueError(
+            "Missing TELEGRAM_BOT_TOKEN or TELEGRAM_TOKEN in environment."
+        )
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("menu", menu))

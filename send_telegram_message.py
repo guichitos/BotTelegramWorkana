@@ -6,11 +6,14 @@ import config.env
 from telegram_admin_utils import get_admin_chat_id
 
 def mensaje(titulo_mg, enlace_mg, chat_id=None, matched_skills=None) -> bool:
-    TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+    TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN") or os.getenv("TELEGRAM_TOKEN")
     TELEGRAM_CHAT_ID = chat_id or get_admin_chat_id()
 
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        print("Error: TELEGRAM_BOT_TOKEN no está configurado o no hay admin en bot_users.")
+        print(
+            "Error: TELEGRAM_BOT_TOKEN/TELEGRAM_TOKEN no está configurado "
+            "o no hay admin en bot_users."
+        )
         return False
 
     skills_text = ""
