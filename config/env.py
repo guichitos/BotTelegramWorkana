@@ -14,4 +14,5 @@ ENV_FILES = {
 }
 
 env_file = ENV_FILES.get(BOT_ENV, ENV_FILES["dev"])
+print(f"🔧 BOT_ENV={BOT_ENV} -> cargando {env_file}")
 load_dotenv(BASE_DIR / env_file)

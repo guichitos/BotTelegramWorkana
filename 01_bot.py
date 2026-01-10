@@ -1,4 +1,7 @@
 # bot.py
+import os
+
+import config.env
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
 from handlers import (
     start,
@@ -17,9 +20,13 @@ from handlers import (
     comandos_invalidos,
 )
 
-TOKEN = "8017150739:AAGb1UzPk9mWdY5GIfCh2pwLi6J1_NY4Kvk"
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN") or os.getenv("TELEGRAM_TOKEN", "")
 
 def run_bot():
+    if not TOKEN:
+        raise ValueError(
+            "Missing TELEGRAM_BOT_TOKEN or TELEGRAM_TOKEN in environment."
+        )
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("menu", menu))
