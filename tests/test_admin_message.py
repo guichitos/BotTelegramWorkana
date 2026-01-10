@@ -4,6 +4,11 @@ import unittest
 from send_telegram_message import mensaje
 from telegram_admin_utils import get_admin_chat_id
 
+# Este test verifica que el bot pueda enviar un mensaje a un usuario admin.
+# Resultado exitoso esperado: mensaje enviado correctamente (assert True) y
+# el test finaliza sin skip cuando TELEGRAM_BOT_TOKEN está configurado y
+# existe un admin en bot_users.
+
 
 class TestAdminMessage(unittest.TestCase):
     def test_admin_can_receive_message(self):
