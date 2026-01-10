@@ -1,10 +1,7 @@
 from typing import Optional
 
-from dotenv import load_dotenv
-
+import config.env
 from workana_bot_database_model import WorkanaBotDatabase
-
-load_dotenv()
 
 
 def get_admin_chat_id() -> Optional[int]:
