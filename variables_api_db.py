@@ -77,12 +77,12 @@ class VariablesApiController:
 
     @property
     def ScriptMustRun(self) -> bool:
-        return self._get_boolean_variable("correr_workana_script")
+        return self._get_boolean_variable("general_scraper_enabled")
 
     @property
     def GeneralScraperEnabled(self) -> bool:
         # El scraper general comparte el mismo switch que el script principal
-        return self._get_boolean_variable("correr_workana_script")
+        return self._get_boolean_variable("general_scraper_enabled")
 
     @property
     def IsConnected(self) -> bool:
@@ -100,16 +100,16 @@ class VariablesApiController:
         return self._connection_error_code
 
     def StartScraping(self) -> bool:
-        return self._update_execution_variable("correr_workana_script", "true")
+        return self._update_execution_variable("general_scraper_enabled", "true")
 
     def StopScraping(self) -> bool:
-        return self._update_execution_variable("correr_workana_script", "false")
+        return self._update_execution_variable("general_scraper_enabled", "false")
 
     def EnableGeneralScraper(self) -> bool:
-        return self._update_execution_variable("correr_workana_script", "true")
+        return self._update_execution_variable("general_scraper_enabled", "true")
 
     def DisableGeneralScraper(self) -> bool:
-        return self._update_execution_variable("correr_workana_script", "false")
+        return self._update_execution_variable("general_scraper_enabled", "false")
 
     def _update_execution_variable(self, name: str, value: str) -> bool:
         if not self._connection:
@@ -159,7 +159,7 @@ if __name__ == "__main__":
     # 🔁 Restaurar estado inicial
     print("🔁 Restaurando estado inicial...")
     if controller._update_execution_variable(
-        "correr_workana_script", "true" if initial_state else "false"
+        "general_scraper_enabled", "true" if initial_state else "false"
     ):
         print("✅ Estado restaurado correctamente")
     else:

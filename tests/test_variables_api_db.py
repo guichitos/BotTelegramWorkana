@@ -11,7 +11,7 @@ from local_o_vps import entorno
 from variables_api_db import VariablesApiController, parse_boolean_value
 
 
-def test_correr_workana_script_variable():
+def test_general_scraper_enabled_variable():
     print("🧪 [ETAPA 1] Inicializando controlador de variables API...")
     controller = VariablesApiController(entorno)
 
@@ -45,19 +45,19 @@ def test_correr_workana_script_variable():
         if not table_exists:
             pytest.fail("La tabla 'variables' no existe en la base de datos.")
 
-        print("🧪 [ETAPA 4] Buscando variable 'correr_workana_script'...")
+        print("🧪 [ETAPA 4] Buscando variable 'general_scraper_enabled'...")
         cursor.execute(
             "SELECT value FROM variables WHERE name = ? LIMIT 1",
-            ("correr_workana_script",),
+            ("general_scraper_enabled",),
         )
         result = cursor.fetchone()
 
         if not result:
             print(
-                "❌ No se encontró la variable 'correr_workana_script' en la tabla 'variables'."
+                "❌ No se encontró la variable 'general_scraper_enabled' en la tabla 'variables'."
             )
             pytest.fail(
-                "La variable 'correr_workana_script' no existe en la base de variables."
+                "La variable 'general_scraper_enabled' no existe en la base de variables."
             )
 
         raw_value = str(result[0]).strip()
