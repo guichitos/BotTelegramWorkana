@@ -10,11 +10,34 @@ from workana_bot_database_model import WorkanaBotDatabase
 class TestAdminUser(unittest.TestCase):
     def test_admin_user_exists_with_name_and_id(self):
         db = WorkanaBotDatabase()
+        config = db._get_connection_config()
+        masked_password = "***" if config.get("password") else "(empty)"
+        print(
+            "DB config -> "
+            f"host={config.get('host')} "
+            f"port={config.get('port')} "
+            f"database={config.get('database')} "
+            f"user={config.get('user')} "
+            f"password={masked_password}"
+        )
+        db.connect()
+        self.assertTrue(
+            db.IsConnected,
+            (
+                "No se pudo conectar a la base de datos. "
+                f"host={config.get('host')} "
+                f"port={config.get('port')} "
+                f"database={config.get('database')} "
+                f"user={config.get('user')}"
+            ),
+        )
+        db.disconnect()
         query = (
             "SELECT telegram_user_id, username "
             "FROM bot_users WHERE role = 'admin' ORDER BY id ASC LIMIT 1"
         )
         result = db.execute_query(query)
+        print(f"Resultado admin -> {result}")
         self.assertTrue(result, "No se encontró usuario admin en bot_users.")
 
         telegram_user_id, username = result[0]
