@@ -35,3 +35,26 @@ INSTRUCCIONES PARA CORRER EL SISTEMA
 - El archivo config_settings.json controla los intervalos en minutos del scheduler (scrape_all_minutes y user_skill_scan_minutes)
 y el cupo máximo de usuarios permitidos (max_users).
 - Los logs se imprimen en consola; puedes redirigir la salida a un archivo si necesitas auditoría.
+
+
+Conectar: ssh root@116.203.98.129
+
+Script principal:
+/home/admin/web/workanabot.guillemendizabal.com/private/bot/bot.py
+
+Entorno virtual:
+/home/admin/web/workanabot.guillemendizabal.com/private/bot/venv/
+
+Usuario de ejecución:
+admin
+
+Directorio de trabajo:
+/home/admin/web/workanabot.guillemendizabal.com/private/bot/
+
+Repositorio Git:
+https://github.com/guichitos/BotTelegramWorkana
+
+Actualizar código desde GitHub:
+
+cd /home/admin/web/workanabot.guillemendizabal.com/private/bot
+git pull
