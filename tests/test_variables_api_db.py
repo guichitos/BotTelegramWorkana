@@ -1,4 +1,11 @@
+import sys
+from pathlib import Path
+
 import pytest
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.append(str(ROOT_DIR))
 
 from local_o_vps import entorno
 from variables_api_db import VariablesApiController, parse_boolean_value
