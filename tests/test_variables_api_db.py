@@ -1,11 +1,8 @@
 import pytest
 
 from local_o_vps import entorno
-from variables_api_db import VariablesApiController
+from variables_api_db import VariablesApiController, parse_boolean_value
 
-
-TRUE_VALUES = {"1", "true", "t", "yes"}
-print("🧪 Iniciando pruebas de VariablesApiController...")
 
 def test_correr_workana_script_variable():
     print("🧪 [ETAPA 1] Inicializando controlador de variables API...")
@@ -45,7 +42,7 @@ def test_correr_workana_script_variable():
             )
 
         raw_value = str(result[0]).strip()
-        parsed_value = raw_value.lower() in TRUE_VALUES
+        parsed_value = parse_boolean_value(raw_value)
         print(f"✅ Variable encontrada. Valor crudo: '{raw_value}'.")
         print(f"✅ Valor interpretado (booleano): {parsed_value}.")
 

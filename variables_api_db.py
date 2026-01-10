@@ -6,6 +6,11 @@ import mariadb
 import config.env
 from local_o_vps import entorno
 
+
+def parse_boolean_value(value: object) -> bool:
+    """Normaliza valores booleanos guardados como texto/número."""
+    return str(value).strip().lower() in ["1", "true", "t", "yes"]
+
 def _require_env(name: str, *, allow_empty: bool = False) -> str:
     value = os.getenv(name)
     if value is None:
@@ -58,7 +63,7 @@ class VariablesApiController:
             cursor.execute("SELECT value FROM variables WHERE name = ? LIMIT 1", (name,))
             result = cursor.fetchone()
             if result:
-                return str(result[0]).strip().lower() in ["1", "true", "t", "yes"]
+                return parse_boolean_value(result[0])
             print(
                 "⚠️ La variable '{name}' no existe en la base de variables; se asume {value}.".format(
                     name=name,
