@@ -5,7 +5,7 @@ from variables_api_db import VariablesApiController
 
 
 TRUE_VALUES = {"1", "true", "t", "yes"}
-
+print("🧪 Iniciando pruebas de VariablesApiController...")
 
 def test_correr_workana_script_variable():
     print("🧪 [ETAPA 1] Inicializando controlador de variables API...")
